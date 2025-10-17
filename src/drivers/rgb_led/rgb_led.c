@@ -1,4 +1,4 @@
-#include "rhb_led.h"
+#include "rgb_led.h"
 
 
 // Initialize the RGB LED by setting the GPIO pins as outputs
