@@ -1,0 +1,72 @@
+# ======================================
+# 🔧 Generic CMake + C/C++ Project Gitignore
+# ======================================
+
+# --- Build artifacts ---
+build/
+build-*/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+
+# --- Compiled object files ---
+*.o
+*.obj
+*.lo
+*.la
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+*.elf
+*.bin
+*.hex
+*.map
+
+# --- Logs and temporary files ---
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*.DS_Store
+*.idea/
+*.vscode/ipch/
+
+# --- IDE and editor stuff ---
+.vscode/
+!.vscode/settings.json        # (Keep VS Code settings for shared config)
+!.vscode/launch.json          # (Keep launch settings if using debugger)
+!.vscode/tasks.json           # (Keep tasks if using build commands)
+!.vscode/extensions.json
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
+
+# --- Python virtualenvs / build scripts ---
+venv/
+__pycache__/
+*.pyc
+
+# --- Raspberry Pi Pico SDK related ---
+pico-sdk/
+pico-examples/
+*.uf2
+
+# --- CMake presets ---
+CMakeUserPresets.json         # User-specific build presets
+CMakeLists.txt.user           # CLion / IDE-generated
+
+# --- Misc ---
+*.cache
+*.crt
+*.pem
+*.key
