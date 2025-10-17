@@ -6,7 +6,8 @@ pico_sdk_init()
 
 add_executable(micro_drive 
                 main.c
-                drivers/RGB_LED/RGB_LED.c
+                drivers/rgb_led/rgb_led.c
+                drivers/led/led.c
 )
 
 target_link_libraries(micro_drive pico_stdlib)
