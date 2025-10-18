@@ -6,7 +6,7 @@ To build and flash the project to the Raspberry Pi Pico, you’ll need the follo
 
 ## 🧩 1. Core build tools
 These are needed for compiling C/C++ code and using CMake:
-```bash
+```bashv
 sudo pacman -S --needed base-devel cmake ninja arm-none-eabi-gcc arm-none-eabi-newlib git
 ```
 💡 On Debian/Ubuntu:
