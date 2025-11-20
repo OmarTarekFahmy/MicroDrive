@@ -2,6 +2,7 @@
 #include "hardware/pwm.h"
 #include "hardware/clocks.h"
 #include "hardware/gpio.h"
+#include "servo.h"
 #include <stdint.h>
 #include <math.h>
 
