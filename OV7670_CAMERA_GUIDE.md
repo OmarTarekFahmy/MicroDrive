@@ -37,7 +37,7 @@ See [CAMERA_WIRING.md](../CAMERA_WIRING.md) for detailed wiring instructions.
 ### Quick Pin Reference
 
 | Function | Pico Pin | OV7670 Pin |
-|----------|----------|------------|
+| -------- | -------- | ---------- |
 | I2C SDA  | GP4      | SDA        |
 | I2C SCL  | GP21     | SCL        |
 | XCLK     | GP3      | XCLK       |
@@ -61,16 +61,19 @@ See [CAMERA_WIRING.md](../CAMERA_WIRING.md) for detailed wiring instructions.
 ### Building the Firmware
 
 1. Navigate to the project directory:
+
 ```bash
 cd src/build
 ```
 
 2. Configure the project (first time only):
+
 ```bash
 cmake ..
 ```
 
 3. Build the camera firmware:
+
 ```bash
 cmake --build . --target camera_test
 ```
@@ -127,11 +130,13 @@ cmake --build . --target camera_test
 The firmware outputs debug information via UART on GPIO 0 (TX) and GPIO 1 (RX) at 115200 baud.
 
 To view debug output:
+
 1. Connect a USB-to-Serial adapter to GP0 and GP1
 2. Use a terminal program (PuTTY, minicom, screen, etc.)
 3. Set baud rate to 115200, 8N1
 
 Example debug output:
+
 ```
 OV7670 USB Camera
 Initializing camera...
@@ -145,13 +150,13 @@ Frame captured (153600 bytes)
 
 ### Common Issues
 
-| Problem | Solution |
-|---------|----------|
-| Camera not detected by OS | Check USB connection, try different port/cable |
-| No I2C communication | Verify I2C wiring and pull-up resistors |
-| Corrupted/no image | Check data pin connections (D0-D7) |
-| Dark image | Verify XCLK is running, check exposure settings |
-| Low frame rate | Normal - current implementation is ~5 FPS |
+| Problem                   | Solution                                        |
+| ------------------------- | ----------------------------------------------- |
+| Camera not detected by OS | Check USB connection, try different port/cable  |
+| No I2C communication      | Verify I2C wiring and pull-up resistors         |
+| Corrupted/no image        | Check data pin connections (D0-D7)              |
+| Dark image                | Verify XCLK is running, check exposure settings |
+| Low frame rate            | Normal - current implementation is ~5 FPS       |
 
 ## Driver Implementation Details
 
@@ -164,6 +169,7 @@ Frame captured (153600 bytes)
 ### PIO Image Capture (`image.pio`)
 
 The PIO program efficiently captures pixel data:
+
 - Waits for HSYNC
 - Captures data on PCLK rising edge
 - Uses autopush to transfer data to FIFO
@@ -172,6 +178,7 @@ The PIO program efficiently captures pixel data:
 ### USB Video Class
 
 The implementation uses TinyUSB to present the camera as a standard UVC device:
+
 - Implements UVC 1.5 specification
 - Provides standard video descriptors
 - Handles streaming requests
@@ -182,12 +189,14 @@ The implementation uses TinyUSB to present the camera as a standard UVC device:
 ### Changing Resolution
 
 To modify resolution, edit `usb_descriptors.h`:
+
 ```c
 #define FRAME_WIDTH   320
 #define FRAME_HEIGHT  240
 ```
 
 And update the camera initialization in `main_camera.c`:
+
 ```c
 OV7670_set_size(&camera_config, OV7670_SIZE_DIV2);  // QVGA
 // Other options:
@@ -200,6 +209,7 @@ OV7670_set_size(&camera_config, OV7670_SIZE_DIV2);  // QVGA
 ### Changing Frame Rate
 
 Modify in `usb_descriptors.h`:
+
 ```c
 #define FRAME_RATE    30  // Target FPS (actual will be lower)
 ```
@@ -207,6 +217,7 @@ Modify in `usb_descriptors.h`:
 ### Changing Output Format
 
 To switch to RGB565, edit `ov7670.c` initialization:
+
 ```c
 ov2640_regs_write(config, OV7670_rgb);  // Instead of OV7670_yuv
 ```
@@ -218,11 +229,13 @@ And update USB descriptors accordingly.
 Current limitations and potential improvements:
 
 1. **Frame Rate**: Currently ~5 FPS due to USB bandwidth and processing
+
    - Optimize DMA transfers
    - Use compression (MJPEG)
    - Reduce resolution
 
-2. **Image Quality**: 
+2. **Image Quality**:
+
    - Adjust camera registers in `ov7670_init.h`
    - Tune exposure, gain, white balance
    - Add post-processing
@@ -243,6 +256,7 @@ Current limitations and potential improvements:
 ## License
 
 This implementation is based on:
+
 - TinyUSB (MIT License)
 - OV7670 driver from usedbytes/camera-pico-ov7670
 - RP2040 USB Camera project by mxyxbb
@@ -250,6 +264,7 @@ This implementation is based on:
 ## Troubleshooting and Support
 
 For issues and questions:
+
 1. Check the debug output via UART
 2. Verify all connections match the wiring guide
 3. Ensure using 3.3V power (not 5V!)
