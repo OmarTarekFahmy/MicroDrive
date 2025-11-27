@@ -50,16 +50,17 @@ This system enables computer vision-based unlock verification using ArUco marker
 
 ## Why OpenCV ArUco (Not Deep Learning)?
 
-| Aspect | OpenCV ArUco | Deep Learning (YOLO, etc.) |
-|--------|--------------|----------------------------|
-| **Accuracy** | Excellent for markers | Overkill for known patterns |
-| **Speed** | 5-10ms per frame | 50-200ms per frame |
-| **3D Pose** | Built-in `solvePnP` | Requires extra implementation |
-| **Dependencies** | Just OpenCV | TensorFlow/PyTorch/ONNX |
-| **Robustness** | Perfect for ArUco | Better for general objects |
-| **CPU Usage** | Minimal | Requires GPU ideally |
+| Aspect           | OpenCV ArUco          | Deep Learning (YOLO, etc.)    |
+| ---------------- | --------------------- | ----------------------------- |
+| **Accuracy**     | Excellent for markers | Overkill for known patterns   |
+| **Speed**        | 5-10ms per frame      | 50-200ms per frame            |
+| **3D Pose**      | Built-in `solvePnP`   | Requires extra implementation |
+| **Dependencies** | Just OpenCV           | TensorFlow/PyTorch/ONNX       |
+| **Robustness**   | Perfect for ArUco     | Better for general objects    |
+| **CPU Usage**    | Minimal               | Requires GPU ideally          |
 
 **ArUco is the right choice because:**
+
 1. We're detecting a **known marker pattern**, not arbitrary objects
 2. We need **precise 3D pose** (position + rotation), which ArUco provides natively
 3. Speed and low latency are critical for real-time verification
@@ -143,31 +144,33 @@ This system enables computer vision-based unlock verification using ArUco marker
 ## Hardware Requirements
 
 ### Pico W Side
+
 - **Raspberry Pi Pico W** (with CYW43 WiFi)
 - **OV7670 Camera Module** (3.3V version)
 - Jumper wires
 - Optional: Relay module for physical unlock
 
 ### Laptop Side
+
 - Python 3.8+
 - OpenCV with ArUco module
 - WiFi connection (same network as Pico W)
 
 ## Pin Connections
 
-| Function | Pico W Pin | OV7670 Pin |
-|----------|------------|------------|
-| I2C SDA  | GP4        | SDA        |
-| I2C SCL  | GP21       | SCL        |
-| XCLK     | GP3        | XCLK       |
-| RESET    | GP17       | RST        |
-| VSYNC    | GP16       | VSYNC      |
-| HREF     | GP15       | HREF       |
-| PCLK     | GP14       | PCLK       |
-| D0-D7    | GP6-GP13   | D0-D7      |
-| **Unlock**| GP22      | (Relay)    |
-| Power    | 3.3V       | VCC        |
-| Ground   | GND        | GND        |
+| Function   | Pico W Pin | OV7670 Pin |
+| ---------- | ---------- | ---------- |
+| I2C SDA    | GP4        | SDA        |
+| I2C SCL    | GP21       | SCL        |
+| XCLK       | GP3        | XCLK       |
+| RESET      | GP17       | RST        |
+| VSYNC      | GP16       | VSYNC      |
+| HREF       | GP15       | HREF       |
+| PCLK       | GP14       | PCLK       |
+| D0-D7      | GP6-GP13   | D0-D7      |
+| **Unlock** | GP22       | (Relay)    |
+| Power      | 3.3V       | VCC        |
+| Ground     | GND        | GND        |
 
 ## Setup Instructions
 
@@ -186,8 +189,8 @@ Print the marker and measure its actual size in meters.
 Edit `src/drivers/wifi/wifi_camera.h`:
 
 ```c
-#define WIFI_SSID       "YourWiFiName"
-#define WIFI_PASSWORD   "YourWiFiPassword"
+#define WIFI_SSID       "277353"
+#define WIFI_PASSWORD   "2004ahmed"
 #define SERVER_IP       "192.168.1.100"  // Your laptop's IP
 #define SERVER_PORT     8888
 ```
@@ -234,36 +237,40 @@ python aruco_server.py \
     --target-rot 0 0 0
 ```
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `--port` | TCP port | 8888 |
-| `--marker-id` | Target ArUco ID | 42 |
-| `--marker-size` | Marker size (meters) | 0.05 |
-| `--pos-tol` | Position tolerance X Y Z (m) | 0.02 0.02 0.05 |
-| `--rot-tol` | Rotation tolerance (degrees) | 10 10 15 |
-| `--target-pos` | Expected position | 0 0 0.30 |
-| `--target-rot` | Expected rotation | 0 0 0 |
+| Parameter       | Description                  | Default        |
+| --------------- | ---------------------------- | -------------- |
+| `--port`        | TCP port                     | 8888           |
+| `--marker-id`   | Target ArUco ID              | 42             |
+| `--marker-size` | Marker size (meters)         | 0.05           |
+| `--pos-tol`     | Position tolerance X Y Z (m) | 0.02 0.02 0.05 |
+| `--rot-tol`     | Rotation tolerance (degrees) | 10 10 15       |
+| `--target-pos`  | Expected position            | 0 0 0.30       |
+| `--target-rot`  | Expected rotation            | 0 0 0          |
 
 ## Troubleshooting
 
 ### "No marker detected"
+
 - Ensure marker is printed clearly without scaling
 - Improve lighting conditions
 - Hold marker closer to camera
 - Check marker ID matches configuration
 
 ### "Pose not valid"
+
 - Marker is outside position tolerance
 - Marker is rotated too much
 - Try relaxing tolerances in server
 
 ### "Connection failed"
+
 - Check WiFi credentials in firmware
 - Verify laptop IP address
 - Ensure firewall allows port 8888
 - Make sure Pico W and laptop on same network
 
 ### Low FPS
+
 - Expected: 5-10 FPS with OV7670
 - Network latency affects round-trip time
 - Consider UDP for lower latency (trade reliability)
