@@ -69,3 +69,39 @@ pico_enable_stdio_uart(camera_test 1)
 
 # Create UF2 and map binaries
 pico_add_extra_outputs(camera_test)
+
+#--------------------------------------------------------------------
+# WiFi Camera Project (OV7670 + WiFi ArUco Streaming) - Pico W Only
+#--------------------------------------------------------------------
+add_executable(wifi_camera
+    main_wifi_camera.c
+    drivers/camera/ov7670.c
+    drivers/wifi/wifi_camera.c
+)
+
+# Generate PIO header for image capture
+pico_generate_pio_header(wifi_camera ${CMAKE_CURRENT_LIST_DIR}/drivers/camera/image.pio)
+
+# Include directories
+target_include_directories(wifi_camera PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/drivers/camera
+    ${CMAKE_CURRENT_LIST_DIR}/drivers/wifi
+)
+
+# Link required Pico libraries including WiFi (Pico W only!)
+target_link_libraries(wifi_camera
+    pico_stdlib
+    hardware_dma
+    hardware_i2c
+    hardware_pio
+    hardware_pwm
+    pico_cyw43_arch_lwip_threadsafe_background  # WiFi + lwIP for Pico W
+)
+
+# Enable USB and UART stdio for debugging
+pico_enable_stdio_usb(wifi_camera 1)
+pico_enable_stdio_uart(wifi_camera 1)
+
+# Create UF2 and map binaries
+pico_add_extra_outputs(wifi_camera)

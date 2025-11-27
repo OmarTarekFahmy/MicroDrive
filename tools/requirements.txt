@@ -1,0 +1,6 @@
+# Python requirements for ArUco Pose Verification Server
+# Install with: pip install -r requirements.txt
+
+opencv-python>=4.8.0
+opencv-contrib-python>=4.8.0  # Required for ArUco module
+numpy>=1.24.0
