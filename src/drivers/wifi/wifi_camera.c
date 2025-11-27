@@ -9,6 +9,9 @@
 #include "lwip/tcp.h"
 #include "lwip/udp.h"
 #include "lwip/dns.h"
+#include "lwip/icmp.h"
+#include "lwip/ip.h"
+#include "lwip/raw.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -31,6 +34,11 @@ static volatile int g_recv_len = 0;
 static uint32_t g_pose_valid_start_ms = 0;
 static bool g_pose_was_valid = false;
 
+// Ping LED tracking
+static uint32_t g_ping_led_off_time = 0;
+static bool g_ping_led_active = false;
+static struct raw_pcb* g_icmp_pcb = NULL;
+
 // ============================================================================
 // Private Function Prototypes
 // ============================================================================
@@ -40,6 +48,8 @@ static err_t tcp_recv_callback(void* arg, struct tcp_pcb* tpcb, struct pbuf* p, 
 static void tcp_error_callback(void* arg, err_t err);
 static void udp_recv_callback(void* arg, struct udp_pcb* pcb, struct pbuf* p,
                                const ip_addr_t* addr, u16_t port);
+static u8_t icmp_recv_callback(void* arg, struct raw_pcb* pcb, struct pbuf* p,
+                                const ip_addr_t* addr);
 
 // ============================================================================
 // Public Functions
@@ -330,6 +340,42 @@ uint32_t wifi_camera_checksum(const uint8_t* data, size_t len) {
     return sum;
 }
 
+void wifi_camera_ping_led_init(void) {
+    // Initialize LED GPIO
+    gpio_init(PING_LED_PIN);
+    gpio_set_dir(PING_LED_PIN, GPIO_OUT);
+    gpio_put(PING_LED_PIN, 0);
+    
+    printf("[WiFi] Ping LED initialized on GPIO %d\n", PING_LED_PIN);
+    
+    // Create RAW PCB for ICMP
+    g_icmp_pcb = raw_new(IP_PROTO_ICMP);
+    if (g_icmp_pcb == NULL) {
+        printf("[WiFi] Failed to create ICMP PCB\n");
+        return;
+    }
+    
+    // Bind to receive all ICMP packets
+    raw_bind(g_icmp_pcb, IP_ADDR_ANY);
+    
+    // Set receive callback
+    raw_recv(g_icmp_pcb, icmp_recv_callback, NULL);
+    
+    printf("[WiFi] ICMP ping monitoring enabled\n");
+}
+
+void wifi_camera_ping_led_task(void) {
+    if (g_ping_led_active) {
+        uint32_t current_time = to_ms_since_boot(get_absolute_time());
+        
+        if (current_time >= g_ping_led_off_time) {
+            // Turn off LED
+            gpio_put(PING_LED_PIN, 0);
+            g_ping_led_active = false;
+        }
+    }
+}
+
 // ============================================================================
 // Private Callback Functions
 // ============================================================================
@@ -404,4 +450,39 @@ static void udp_recv_callback(void* arg, struct udp_pcb* pcb, struct pbuf* p,
         
         pbuf_free(p);
     }
+}
+
+static u8_t icmp_recv_callback(void* arg, struct raw_pcb* pcb, struct pbuf* p,
+                                const ip_addr_t* addr) {
+    (void)arg;
+    (void)pcb;
+    
+    printf("[WiFi] ICMP callback triggered! p=%p, len=%d\n", p, p ? p->len : 0);
+    
+    if (p != NULL && p->len >= sizeof(struct icmp_echo_hdr)) {
+        // Get IP header to skip it
+        struct ip_hdr* iphdr = (struct ip_hdr*)p->payload;
+        u16_t iphdr_len = IPH_HL(iphdr) * 4;
+        
+        // Get ICMP header (after IP header)
+        if (p->len >= iphdr_len + sizeof(struct icmp_echo_hdr)) {
+            struct icmp_echo_hdr* icmp_hdr = (struct icmp_echo_hdr*)((u8_t*)p->payload + iphdr_len);
+            
+            printf("[WiFi] ICMP type=%d, code=%d\n", icmp_hdr->type, icmp_hdr->code);
+            
+            // Check if this is an ICMP Echo Request (ping)
+            if (icmp_hdr->type == ICMP_ECHO) {
+                printf("[WiFi] Ping received from %s - Turning on LED!\n", ipaddr_ntoa(addr));
+                
+                // Turn on LED
+                gpio_put(PING_LED_PIN, 1);
+                g_ping_led_active = true;
+                g_ping_led_off_time = to_ms_since_boot(get_absolute_time()) + PING_LED_DURATION_MS;
+            }
+        }
+    }
+    
+    // Return 0 to let lwIP continue processing (do NOT free the packet)
+    // lwIP will handle the echo reply and free the packet
+    return 0;
 }

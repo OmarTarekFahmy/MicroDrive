@@ -117,6 +117,10 @@ int main(void) {
         }
     }
     
+    // Initialize ping LED monitoring
+    printf("\n[System] Initializing ping LED monitoring...\n");
+    wifi_camera_ping_led_init();
+    
     // Connect to server
     printf("\n[System] Connecting to ArUco processor at %s:%d...\n", LAPTOP_IP, LAPTOP_PORT);
     if (!wifi_camera_connect(LAPTOP_IP, LAPTOP_PORT)) {
@@ -182,6 +186,9 @@ int main(void) {
         
         // Status LED
         status_led_task();
+        
+        // Update ping LED state
+        wifi_camera_ping_led_task();
         
         frame_count++;
         

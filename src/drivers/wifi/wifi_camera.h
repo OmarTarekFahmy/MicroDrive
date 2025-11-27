@@ -16,6 +16,10 @@
 // Configuration
 // ============================================================================
 
+// Ping LED settings
+#define PING_LED_PIN    15          // GPIO pin for ping indicator LED
+#define PING_LED_DURATION_MS 3000   // LED on duration when pinged
+
 // WiFi credentials (change these!)
 #define WIFI_SSID       "OmarGamal"
 #define WIFI_PASSWORD   "ufvb8809"
@@ -130,5 +134,17 @@ void wifi_camera_disconnect(void);
  * @brief Calculate simple checksum for frame data
  */
 uint32_t wifi_camera_checksum(const uint8_t* data, size_t len);
+
+/**
+ * @brief Initialize ping LED monitoring
+ * Sets up GPIO and ICMP listener to light LED on ping
+ */
+void wifi_camera_ping_led_init(void);
+
+/**
+ * @brief Update ping LED state (call this regularly in main loop)
+ * Automatically turns off LED after configured duration
+ */
+void wifi_camera_ping_led_task(void);
 
 #endif // WIFI_CAMERA_H
