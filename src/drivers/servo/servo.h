@@ -2,23 +2,63 @@
 #define SERVO_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
-// Initialize the servo on the given GPIO pin (continuous rotation servo)
-void servo_init(uint32_t gpio_pin);
+// Maximum number of servos supported
+#define MAX_SERVOS 3
 
-// Stop the servo
-void servo_stop(void);
+// Servo IDs
+#define SERVO_X 0
+#define SERVO_Y 1
+#define SERVO_Z 2
 
-// Set servo speed: -100 (full CCW) to +100 (full CW), 0 = stop
-void servo_set_speed(float speed);
+// Servo types
+#define SERVO_TYPE_180 0  // Standard 180-degree positional servo
+#define SERVO_TYPE_360 1  // 360-degree continuous rotation servo
 
-// Get current estimated position
-float servo_get_position(void);
+// Speed for 360° continuous rotation servos (degrees per second)
+// Measure this by timing a full rotation and calculate: 360 / time_seconds
+#define SERVO_360_SPEED_DPS 90.0f  // Adjust based on your servo speed
 
-// Set current position (for calibration)
-void servo_set_position(float position);
+/**
+ * @brief Initialize a servo on the given GPIO pin
+ * @param servo_id The servo ID (0, 1, or 2)
+ * @param gpio_pin The GPIO pin number connected to the servo signal wire
+ * @param servo_type SERVO_TYPE_180 or SERVO_TYPE_360
+ */
+void servo_init(uint8_t servo_id, uint32_t gpio_pin, uint8_t servo_type);
 
-// Update position based on speed and time (call regularly)
-void servo_update_position(float speed, float dt_ms);
+/**
+ * @brief Set the angle for a servo
+ *        For 180° servo: direct position control
+ *        For 360° servo: rotates by speed*time to reach target angle
+ * @param servo_id The servo ID (0, 1, or 2)
+ * @param angle The target angle (-90 to +90 degrees)
+ */
+void servo_set_angle(uint8_t servo_id, float angle);
+
+/**
+ * @brief Get the current angle of a servo
+ * @param servo_id The servo ID (0, 1, or 2)
+ * @return The current angle in degrees
+ */
+float servo_get_angle(uint8_t servo_id);
+
+/**
+ * @brief Set servo to neutral/center position (stop for 360°)
+ * @param servo_id The servo ID (0, 1, or 2)
+ */
+void servo_center(uint8_t servo_id);
+
+/**
+ * @brief Stop a 360° servo (set to center pulse)
+ * @param servo_id The servo ID
+ */
+void servo_stop(uint8_t servo_id);
+
+/**
+ * @brief Center all servos
+ */
+void servo_center_all(void);
 
 #endif

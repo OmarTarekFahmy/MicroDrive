@@ -1,40 +1,49 @@
 #include "touch_sensor.h"
 #include "pico/stdlib.h"
 
-static uint8_t touch_pin;
-static bool last_state = false;
-static uint32_t last_change_time = 0;
+typedef struct {
+    uint8_t gpio_pin;
+    bool initialized;
+} touch_state_t;
 
-#define DEBOUNCE_TIME_MS 50  // 50ms debounce time
+static touch_state_t touch_sensors[MAX_TOUCH_SENSORS];
 
-void touch_init(uint8_t pin) {
-    touch_pin = pin;
+void touch_init(uint8_t touch_id, uint8_t gpio_pin) {
+    if (touch_id >= MAX_TOUCH_SENSORS) return;
+    
+    touch_state_t *t = &touch_sensors[touch_id];
+    t->gpio_pin = gpio_pin;
+    t->initialized = true;
     
     // Initialize GPIO as input with pull-down
-    gpio_init(touch_pin);
-    gpio_set_dir(touch_pin, GPIO_IN);
-    gpio_pull_down(touch_pin);  // Pull-down so it reads LOW when not touched
+    gpio_init(gpio_pin);
+    gpio_set_dir(gpio_pin, GPIO_IN);
+    gpio_pull_down(gpio_pin);
 }
 
-bool touch_is_pressed(void) {
-    // Read the pin state
-    // Capacitive touch sensors typically output HIGH when touched
-    return gpio_get(touch_pin);
+void touch_init_all(uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4) {
+    touch_init(TOUCH_1, pin1);
+    touch_init(TOUCH_2, pin2);
+    touch_init(TOUCH_3, pin3);
+    touch_init(TOUCH_4, pin4);
 }
 
-bool touch_read_debounced(void) {
-    bool current_state = touch_is_pressed();
-    uint32_t current_time = to_ms_since_boot(get_absolute_time());
-    
-    // Check if state has changed
-    if (current_state != last_state) {
-        // Check if enough time has passed since last change (debouncing)
-        if ((current_time - last_change_time) > DEBOUNCE_TIME_MS) {
-            last_state = current_state;
-            last_change_time = current_time;
-            return current_state;
+bool touch_is_pressed(uint8_t touch_id) {
+    if (touch_id >= MAX_TOUCH_SENSORS || !touch_sensors[touch_id].initialized) 
+        return false;
+    return gpio_get(touch_sensors[touch_id].gpio_pin);
+}
+
+bool touch_read_debounced(uint8_t touch_id) {
+    // Just use raw read - capacitive touch modules have built-in debounce
+    return touch_is_pressed(touch_id);
+}
+
+int8_t touch_get_pressed(void) {
+    for (uint8_t i = 0; i < MAX_TOUCH_SENSORS; i++) {
+        if (touch_is_pressed(i)) {
+            return i;
         }
     }
-    
-    return last_state;
+    return -1;  // None pressed
 }
