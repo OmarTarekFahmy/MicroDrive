@@ -21,11 +21,11 @@
 #define PING_LED_DURATION_MS 3000   // LED on duration when pinged
 
 // WiFi credentials (change these!)
-#define WIFI_SSID       "OmarGamal"
-#define WIFI_PASSWORD   "ufvb8809"
+#define WIFI_SSID       "youssef's Galaxy S21 Ultra 5G"
+#define WIFI_PASSWORD   "Ctiger@YM123"
 
 // Server settings (laptop IP and port)
-#define SERVER_IP       "192.168.1.100"  // Change to your laptop's IP
+#define SERVER_IP       "10.96.19.200"  // Change to your laptop's IP
 #define SERVER_PORT     8888
 
 // Streaming protocol

@@ -293,218 +293,351 @@
 
 /* 
  */
+/**
+ * @file main_wifi_camera.c
+ * @brief WiFi Camera with ArUco Marker Verification
+ * 
+ * Captures images with OV7670, sends to laptop for ArUco processing,
+ * and controls GREEN/RED LEDs based on verification result.
+ * 
+ * LED Indicators:
+ *   GREEN LED - Verification successful (2 consecutive valid frames)
+ *   RED LED   - Verification failed or marker not detected
+ * 
+ * @author MicroDrive Team
+ * @date December 4, 2025
+ */
 
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-#include "bsp/board.h"
-#include "tusb.h"
-#include "usb_descriptors.h"
-
 #include "pico/stdlib.h"
-#include "hardware/dma.h"
+#include "hardware/i2c.h"
 #include "hardware/pio.h"
+#include "hardware/dma.h"
 #include "ov7670.h"
+#include "drivers/wifi/wifi_camera.h"
 
-//--------------------------------------------------------------------+
-// MACRO CONSTANT TYPEDEF PROTYPES
-//--------------------------------------------------------------------+
+// ============================================================================
+// Configuration
+// ============================================================================
 
-// Frame buffer for camera
-static uint8_t frame_buffer[FRAME_WIDTH * FRAME_HEIGHT * 2];  // YUY2 format (2 bytes per pixel)
+// LED pins for verification status
+#define LED_GREEN_PIN   16  // GPIO 16 - Verification successful
+#define LED_RED_PIN     17  // GPIO 17 - Verification failed
 
-// Camera configuration
+// Camera capture interval
+#define CAPTURE_INTERVAL_MS  500  // Capture every 500ms (2 FPS)
+
+// Frame buffer size
+#define FRAME_WIDTH   320
+#define FRAME_HEIGHT  240
+#define FRAME_SIZE    (FRAME_WIDTH * FRAME_HEIGHT * 2)  // YUV422
+
+// ============================================================================
+// Global Variables
+// ============================================================================
+
+static uint8_t g_frame_buffer[FRAME_SIZE];
+static bool g_camera_ready = false;
+static uint32_t g_frame_counter = 0;
+
+// LED state
+static bool g_green_led_on = false;
+static bool g_red_led_on = false;
+
+// Statistics
+static uint32_t g_total_captures = 0;
+static uint32_t g_successful_verifications = 0;
+static uint32_t g_failed_verifications = 0;
+static uint32_t g_markers_detected = 0;
+
+// ============================================================================
+// LED Control
+// ============================================================================
+
+void leds_init(void) {
+    // Initialize LED pins
+    gpio_init(LED_GREEN_PIN);
+    gpio_set_dir(LED_GREEN_PIN, GPIO_OUT);
+    gpio_put(LED_GREEN_PIN, 0);
+    
+    gpio_init(LED_RED_PIN);
+    gpio_set_dir(LED_RED_PIN, GPIO_OUT);
+    gpio_put(LED_RED_PIN, 0);
+    
+    printf("[LED] Initialized: GREEN=GPIO%d, RED=GPIO%d\n", LED_GREEN_PIN, LED_RED_PIN);
+    
+    // Test LEDs at startup
+    printf("[LED] Testing LEDs...\n");
+    gpio_put(LED_GREEN_PIN, 1);
+    sleep_ms(300);
+    gpio_put(LED_GREEN_PIN, 0);
+    gpio_put(LED_RED_PIN, 1);
+    sleep_ms(300);
+    gpio_put(LED_RED_PIN, 0);
+    printf("[LED] Test complete\n");
+}
+
+void led_set_verification_status(bool verified) {
+    if (verified) {
+        // Verification successful - GREEN on, RED off
+        gpio_put(LED_GREEN_PIN, 1);
+        gpio_put(LED_RED_PIN, 0);
+        g_green_led_on = true;
+        g_red_led_on = false;
+        printf("[LED] ✓ GREEN ON (Verified)\n");
+    } else {
+        // Verification failed - RED on, GREEN off
+        gpio_put(LED_GREEN_PIN, 0);
+        gpio_put(LED_RED_PIN, 1);
+        g_green_led_on = false;
+        g_red_led_on = true;
+        printf("[LED] ✗ RED ON (Failed)\n");
+    }
+}
+
+void led_set_idle(void) {
+    // Both LEDs off
+    gpio_put(LED_GREEN_PIN, 0);
+    gpio_put(LED_RED_PIN, 0);
+    g_green_led_on = false;
+    g_red_led_on = false;
+}
+
+void led_blink_error(int count) {
+    // Blink RED LED to indicate error
+    for (int i = 0; i < count; i++) {
+        gpio_put(LED_RED_PIN, 1);
+        sleep_ms(100);
+        gpio_put(LED_RED_PIN, 0);
+        sleep_ms(100);
+    }
+}
+
+// ============================================================================
+// Camera Functions
+// ============================================================================
+
+// Camera configuration (OV7670/OV2640 driver)
 static struct ov2640_config camera_config = {
     .sccb = i2c0,
-    .pin_sioc = 21,           // I2C0 SCL
-    .pin_siod = 4,            // I2C0 SDA
-    .pin_resetb = 17,         // Camera reset
-    .pin_xclk = 3,            // Master clock for camera
-    .pin_vsync = 16,          // Vertical sync
-    .pin_y2_pio_base = 6,     // D0-D7, PCLK, HREF base pin
+    .pin_sioc = 5,
+    .pin_siod = 4,
+    .pin_resetb = 2,
+    .pin_xclk = 3,
+    .pin_vsync = 6,
+    .pin_y2_pio_base = 10,  // D0-D7 start at GPIO 10
     .pio = pio0,
     .pio_sm = 0,
     .dma_channel = 0,
-    .image_buf = frame_buffer,
-    .image_buf_size = sizeof(frame_buffer)
+    .image_buf = g_frame_buffer,
+    .image_buf_size = FRAME_SIZE
 };
 
-/* Blink pattern:
- * - 250 ms : device not mounted
- * - 1000 ms : device mounted
- * - 2500 ms : device is suspended
- */
-enum  {
-  BLINK_NOT_MOUNTED = 250,
-  BLINK_MOUNTED = 1000,
-  BLINK_SUSPENDED = 2500,
-};
-
-static uint32_t blink_interval_ms = BLINK_NOT_MOUNTED;
-
-void led_blinking_task(void);
-void video_task(void);
-
-/*------------- MAIN -------------*/
-int main(void)
-{
-    board_init();
+bool camera_init(void) {
+    printf("\n[Camera] Initializing OV7670...\n");
     
-    // Initialize TinyUSB
-    tusb_init();
-
-    stdio_init_all();
-    sleep_ms(2000);  // Give time for USB serial to initialize
-
-    printf("\n\nOV7670 USB Camera\n");
-    printf("Initializing camera...\n");
-
-    // Initialize the camera
     ov2640_init(&camera_config);
     
     // Read camera ID to verify I2C communication
-    uint8_t pid = ov2640_reg_read(&camera_config, 0x0A);  // Product ID
-    uint8_t ver = ov2640_reg_read(&camera_config, 0x0B);  // Version
-    printf("Camera ID: PID=0x%02X, VER=0x%02X (should be 0x76, 0x73)\n", pid, ver);
+    uint8_t pid = ov2640_reg_read(&camera_config, 0x0A);
+    uint8_t ver = ov2640_reg_read(&camera_config, 0x0B);
+    printf("[Camera] Camera ID: PID=0x%02X, VER=0x%02X\n", pid, ver);
     
-    printf("Camera initialized successfully!\n");
-    printf("Resolution: %dx%d\n", FRAME_WIDTH, FRAME_HEIGHT);
-    printf("Frame buffer size: %d bytes\n", sizeof(frame_buffer));
+    if (pid != 0x76) {
+        printf("[Camera] Warning: Expected PID=0x76, got 0x%02X\n", pid);
+    }
     
-    // Fill buffer with test pattern to verify USB streaming works
-    for(int i = 0; i < sizeof(frame_buffer); i += 4) {
-        frame_buffer[i] = 0x80;      // Y
-        frame_buffer[i+1] = 0x80;    // U
-        frame_buffer[i+2] = 0x80;    // Y
-        frame_buffer[i+3] = 0x80;    // V (gray color)
+    printf("[Camera] OV7670 initialized: %dx%d YUV422\n", FRAME_WIDTH, FRAME_HEIGHT);
+    g_camera_ready = true;
+    return true;
+}
+
+bool camera_capture_frame(uint8_t* buffer, size_t buffer_size) {
+    if (!g_camera_ready) {
+        return false;
     }
-    printf("Test pattern loaded\n");
-
-    while (1)
-    {
-        tud_task(); // TinyUSB device task
-        led_blinking_task();
-        video_task();
-    }
-
-    return 0;
-}
-
-//--------------------------------------------------------------------+
-// Device callbacks
-//--------------------------------------------------------------------+
-
-// Invoked when device is mounted
-void tud_mount_cb(void)
-{
-    blink_interval_ms = BLINK_MOUNTED;
-    printf("Device mounted\n");
-}
-
-// Invoked when device is unmounted
-void tud_umount_cb(void)
-{
-    blink_interval_ms = BLINK_NOT_MOUNTED;
-    printf("Device unmounted\n");
-}
-
-// Invoked when usb bus is suspended
-// remote_wakeup_en : if host allow us  to perform remote wakeup
-// Within 7ms, device must draw an average of current less than 2.5 mA from bus
-void tud_suspend_cb(bool remote_wakeup_en)
-{
-    (void) remote_wakeup_en;
-    blink_interval_ms = BLINK_SUSPENDED;
-    printf("Device suspended\n");
-}
-
-// Invoked when usb bus is resumed
-void tud_resume_cb(void)
-{
-    blink_interval_ms = BLINK_MOUNTED;
-    printf("Device resumed\n");
-}
-
-//--------------------------------------------------------------------+
-// USB Video
-//--------------------------------------------------------------------+
-
-static unsigned frame_num = 0;
-static unsigned tx_busy = 0;
-static unsigned interval_ms = 1000 / FRAME_RATE;
-
-void video_task(void)
-{
-    static unsigned start_ms = 0;
-    static unsigned already_sent = 0;
-
-    if (!tud_video_n_streaming(0, 0)) {
-        already_sent  = 0;
-        frame_num     = 0;
-        tx_busy       = 0;
-        return;
-    }
-
-    if (!already_sent) {
-        already_sent = 1;
-        tx_busy = 1;
-        start_ms = board_millis();
-        
-        // Capture a frame from the camera
-        printf("Capturing frame %u...\n", frame_num);
-        ov2640_capture_frame(&camera_config);
-        printf("Frame captured (%d bytes)\n", sizeof(frame_buffer));
-        
-        tud_video_n_frame_xfer(0, 0, (void*)frame_buffer, sizeof(frame_buffer));
-        return;
-    }
-
-    unsigned cur = board_millis();
-    if (cur - start_ms < interval_ms) return; // not enough time
-    if (tx_busy) return;
     
-    tx_busy = 1;
-    start_ms += interval_ms;
-
-    // Capture next frame
-    printf("Capturing frame %u...\n", ++frame_num);
+    if (buffer_size < FRAME_SIZE) {
+        printf("[Camera] Buffer too small: %zu < %d\n", buffer_size, FRAME_SIZE);
+        return false;
+    }
+    
+    printf("[Camera] Capturing frame %lu...\n", g_frame_counter);
+    
+    // Capture frame using ov2640 driver
     ov2640_capture_frame(&camera_config);
-    printf("Frame captured\n");
     
-    tud_video_n_frame_xfer(0, 0, (void*)frame_buffer, sizeof(frame_buffer));
+    // Frame data is already in g_frame_buffer (camera_config.image_buf)
+    // No need to copy if buffer points to g_frame_buffer
+    
+    g_frame_counter++;
+    g_total_captures++;
+    printf("[Camera] Frame %lu captured (%d bytes)\n", g_frame_counter, FRAME_SIZE);
+    
+    return true;
 }
 
-void tud_video_frame_xfer_complete_cb(uint_fast8_t ctl_idx, uint_fast8_t stm_idx)
-{
-    (void)ctl_idx; (void)stm_idx;
-    tx_busy = 0;
-    /* flip buffer */
-    //already_sent = 0;
+// ============================================================================
+// Main Application
+// ============================================================================
+
+void print_banner(void) {
+    printf("\n");
+    printf("========================================\n");
+    printf("  WiFi Camera ArUco Verification\n");
+    printf("========================================\n");
+    printf("  Pico W + OV7670 Camera\n");
+    printf("  Resolution: %dx%d\n", FRAME_WIDTH, FRAME_HEIGHT);
+    printf("  Server: %s:%d\n", SERVER_IP, SERVER_PORT);
+    printf("========================================\n\n");
 }
 
-int tud_video_commit_cb(uint_fast8_t ctl_idx, uint_fast8_t stm_idx,
-                        video_probe_and_commit_control_t const *parameters)
-{
-    (void)ctl_idx; (void)stm_idx;
-    /* convert unit to ms from 100 ns */
-    interval_ms = parameters->dwFrameInterval / 10000;
-    printf("Video commit: interval = %u ms\n", interval_ms);
-    return VIDEO_ERROR_NONE;
+void print_statistics(void) {
+    printf("\n--- Statistics ---\n");
+    printf("  Total Captures:       %lu\n", g_total_captures);
+    printf("  Markers Detected:     %lu\n", g_markers_detected);
+    printf("  Verifications (OK):   %lu\n", g_successful_verifications);
+    printf("  Verifications (FAIL): %lu\n", g_failed_verifications);
+    printf("  LED Status: GREEN=%s, RED=%s\n",
+           g_green_led_on ? "ON" : "OFF",
+           g_red_led_on ? "ON" : "OFF");
+    printf("------------------\n\n");
 }
 
-//--------------------------------------------------------------------+
-// BLINKING TASK
-//--------------------------------------------------------------------+
-void led_blinking_task(void)
-{
-    static uint32_t start_ms = 0;
-    static bool led_state = false;
-
-    // Blink every interval ms
-    if ( board_millis() - start_ms < blink_interval_ms) return; // not enough time
-    start_ms += blink_interval_ms;
-
-    board_led_write(led_state);
-    led_state = 1 - led_state; // toggle
+int main() {
+    // Initialize stdio
+    stdio_init_all();
+    sleep_ms(2000);  // Wait for USB serial
+    
+    print_banner();
+    
+    // Initialize LEDs
+    leds_init();
+    
+    // Initialize WiFi
+    printf("[WiFi] Initializing WiFi...\n");
+    if (!wifi_camera_init()) {
+        printf("[ERROR] WiFi initialization failed\n");
+        led_blink_error(5);
+        return -1;
+    }
+    
+    // Connect to server
+    printf("[WiFi] Connecting to server %s:%d...\n", SERVER_IP, SERVER_PORT);
+    if (!wifi_camera_connect(SERVER_IP, SERVER_PORT)) {
+        printf("[ERROR] Failed to connect to server\n");
+        led_blink_error(5);
+        return -1;
+    }
+    
+    printf("[WiFi] Connected to server!\n");
+    
+    // Initialize camera
+    if (!camera_init()) {
+        printf("[ERROR] Camera initialization failed\n");
+        led_blink_error(5);
+        return -1;
+    }
+    
+    // Initialize ping LED monitoring
+    wifi_camera_ping_led_init();
+    
+    printf("\n[Main] Starting capture loop...\n");
+    printf("[Main] Press Ctrl+C to stop\n\n");
+    
+    uint32_t last_capture_time = 0;
+    uint32_t loop_count = 0;
+    
+    // Main loop
+    while (true) {
+        // Update ping LED state
+        wifi_camera_ping_led_task();
+        
+        uint32_t current_time = to_ms_since_boot(get_absolute_time());
+        
+        // Capture and send frame at regular intervals
+        if ((current_time - last_capture_time) >= CAPTURE_INTERVAL_MS) {
+            last_capture_time = current_time;
+            loop_count++;
+            
+            printf("\n=== Capture #%lu (Frame #%lu) ===\n", loop_count, g_frame_counter);
+            
+            // Capture frame
+            if (!camera_capture_frame(g_frame_buffer, FRAME_SIZE)) {
+                printf("[ERROR] Frame capture failed\n");
+                led_set_verification_status(false);
+                g_failed_verifications++;
+                continue;
+            }
+            
+            // Send frame to server
+            printf("[WiFi] Sending frame to server...\n");
+            if (!wifi_camera_send_frame(g_frame_buffer, FRAME_WIDTH, FRAME_HEIGHT)) {
+                printf("[ERROR] Failed to send frame\n");
+                led_set_verification_status(false);
+                g_failed_verifications++;
+                continue;
+            }
+            
+            printf("[WiFi] Frame sent, waiting for response...\n");
+            
+            // Receive verification response
+            pose_response_t response;
+            if (!wifi_camera_receive_response(&response, 5000)) {
+                printf("[ERROR] No response from server (timeout)\n");
+                led_set_verification_status(false);
+                g_failed_verifications++;
+                continue;
+            }
+            
+            // Process response
+            printf("[Response] Received:\n");
+            printf("  Marker Found:  %s\n", response.marker_found ? "YES" : "NO");
+            
+            if (response.marker_found) {
+                g_markers_detected++;
+                printf("  Marker ID:     %d\n", response.marker_id);
+                printf("  Pose Valid:    %s\n", response.pose_valid ? "YES" : "NO");
+                printf("  Unlock Ready:  %s\n", response.unlock_ready ? "YES" : "NO");
+                printf("  Position:      (%.3f, %.3f, %.3f) m\n",
+                       response.pos_x, response.pos_y, response.pos_z);
+                printf("  Rotation:      (%.1f, %.1f, %.1f) deg\n",
+                       response.rot_x, response.rot_y, response.rot_z);
+                
+                // Update LED status based on verification
+                if (response.unlock_ready) {
+                    printf("[RESULT] ✓✓✓ VERIFICATION COMPLETE ✓✓✓\n");
+                    led_set_verification_status(true);
+                    g_successful_verifications++;
+                } else if (response.pose_valid) {
+                    printf("[RESULT] ✓ Pose valid, waiting for consecutive frames...\n");
+                    led_set_verification_status(false);
+                    g_failed_verifications++;
+                } else {
+                    printf("[RESULT] ✗ Pose out of tolerance\n");
+                    led_set_verification_status(false);
+                    g_failed_verifications++;
+                }
+            } else {
+                printf("[RESULT] ✗ No marker detected\n");
+                led_set_verification_status(false);
+                g_failed_verifications++;
+            }
+            
+            // Print statistics every 10 captures
+            if (loop_count % 10 == 0) {
+                print_statistics();
+            }
+        }
+        
+        // Small delay to prevent busy waiting
+        sleep_ms(10);
+    }
+    
+    // Cleanup (never reached in this implementation)
+    wifi_camera_disconnect();
+    led_set_idle();
+    
+    return 0;
 }

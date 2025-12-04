@@ -15,7 +15,7 @@ pico_sdk_init()
 # Celestial Lock Project (Main project with gyro, servo, touch, buzzer, LEDs)
 #--------------------------------------------------------------------
 add_executable(servo_test
-    main.c
+    ServoGyroWorking_needsTweaks.c
     drivers/servo/servo.c
     drivers/Gyro/mpu6050.c
     drivers/lcd/lcd_i2c.c
