@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "pico/stdlib.h"
+#include "pico/cyw43_arch.h"
 #include "hardware/i2c.h"
 #include "hardware/pio.h"
 #include "hardware/dma.h"
@@ -32,10 +33,6 @@
 
 // Camera capture interval
 #define CAPTURE_INTERVAL_MS  500  // Capture every 500ms (2 FPS)
-
-// Server connection
-#define SERVER_IP    "10.96.19.200"  // Change to your laptop's IP
-#define SERVER_PORT  8888
 
 // Frame buffer size
 #define FRAME_WIDTH   320
@@ -59,6 +56,11 @@ static uint32_t g_total_captures = 0;
 static uint32_t g_successful_verifications = 0;
 static uint32_t g_failed_verifications = 0;
 static uint32_t g_markers_detected = 0;
+
+// Heartbeat LED (onboard LED for connectivity indicator)
+static uint32_t g_last_heartbeat_time = 0;
+static bool g_heartbeat_led_on = false;
+static bool g_wifi_connected = true;
 
 // ============================================================================
 // LED Control
@@ -128,14 +130,15 @@ void led_blink_error(int count) {
 // ============================================================================
 
 // Camera configuration (OV7670/OV2640 driver)
+// Pin assignment matches CAMERA_WIRING.md
 static struct ov2640_config camera_config = {
     .sccb = i2c0,
-    .pin_sioc = 5,
-    .pin_siod = 4,
-    .pin_resetb = 2,
-    .pin_xclk = 3,
-    .pin_vsync = 6,
-    .pin_y2_pio_base = 10,  // D0-D7 start at GPIO 10
+    .pin_sioc = 21,          // I2C0 SCL (GP21)
+    .pin_siod = 4,           // I2C0 SDA (GP4)
+    .pin_resetb = 17,        // Camera reset (GP17)
+    .pin_xclk = 3,           // Master clock for camera (GP3)
+    .pin_vsync = 16,         // Vertical sync (GP16)
+    .pin_y2_pio_base = 6,    // D0-D7 start at GPIO 6 (GP6-GP13)
     .pio = pio0,
     .pio_sm = 0,
     .dma_channel = 0,
@@ -173,6 +176,37 @@ bool camera_capture_frame(uint8_t* buffer, size_t buffer_size) {
     }
     
     printf("[Camera] Capturing frame %lu...\n", g_frame_counter);
+    printf("[Camera] Waiting for VSYNC (GPIO %d)...\n", camera_config.pin_vsync);
+    
+    // Add timeout for VSYNC wait (5 seconds)
+    uint32_t start_time = to_ms_since_boot(get_absolute_time());
+    uint32_t timeout_ms = 5000;
+    
+    // Wait for vsync with timeout
+    printf("[Camera] Current VSYNC state: %d\n", gpio_get(camera_config.pin_vsync));
+    
+    // Try to capture with timeout protection
+    bool vsync_detected = false;
+    while ((to_ms_since_boot(get_absolute_time()) - start_time) < 1000) {
+        if (gpio_get(camera_config.pin_vsync)) {
+            vsync_detected = true;
+            break;
+        }
+        sleep_ms(1);
+    }
+    
+    if (!vsync_detected) {
+        printf("[Camera] WARNING: No VSYNC signal detected!\n");
+        printf("[Camera] Camera may not be outputting frames.\n");
+        printf("[Camera] Check:\n");
+        printf("  - Camera power (3.3V)\n");
+        printf("  - XCLK signal (GPIO %d)\n", camera_config.pin_xclk);
+        printf("  - VSYNC wiring (GPIO %d)\n", camera_config.pin_vsync);
+        printf("  - Camera module seated properly\n");
+        return false;
+    }
+    
+    printf("[Camera] VSYNC detected, starting DMA capture...\n");
     
     // Capture frame using ov2640 driver
     ov2640_capture_frame(&camera_config);
@@ -182,7 +216,7 @@ bool camera_capture_frame(uint8_t* buffer, size_t buffer_size) {
     
     g_frame_counter++;
     g_total_captures++;
-    printf("[Camera] Frame %lu captured (%d bytes)\n", g_frame_counter, FRAME_SIZE);
+    printf("[Camera] ✓ Frame %lu captured (%d bytes)\n", g_frame_counter, FRAME_SIZE);
     
     return true;
 }
@@ -202,23 +236,54 @@ void print_banner(void) {
     printf("========================================\n\n");
 }
 
+// ============================================================================
+// Heartbeat LED (Connectivity Indicator)
+// ============================================================================
+
+void update_heartbeat_led(void) {
+    uint32_t current_time = to_ms_since_boot(get_absolute_time());
+    
+    if (g_wifi_connected) {
+        // Normal heartbeat: blink every 2 seconds when connected
+        if ((current_time - g_last_heartbeat_time) >= 2000) {
+            g_last_heartbeat_time = current_time;
+            g_heartbeat_led_on = !g_heartbeat_led_on;
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, g_heartbeat_led_on ? 1 : 0);
+        }
+    } else {
+        // Rapid blink when disconnected (error indicator)
+        if ((current_time - g_last_heartbeat_time) >= 200) {
+            g_last_heartbeat_time = current_time;
+            g_heartbeat_led_on = !g_heartbeat_led_on;
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, g_heartbeat_led_on ? 1 : 0);
+        }
+    }
+}
+
+// ============================================================================
+// Statistics & Reporting
+// ============================================================================
+
 void print_statistics(void) {
     printf("\n--- Statistics ---\n");
     printf("  Total Captures:       %lu\n", g_total_captures);
     printf("  Markers Detected:     %lu\n", g_markers_detected);
     printf("  Verifications (OK):   %lu\n", g_successful_verifications);
     printf("  Verifications (FAIL): %lu\n", g_failed_verifications);
-    printf("  LED Status: GREEN=%s, RED=%s\n",
+    printf("  WiFi Connected:       %s\n", g_wifi_connected ? "YES" : "NO");
+    printf("  LED Status: GREEN=%s, RED=%s, HEARTBEAT=%s\n",
            g_green_led_on ? "ON" : "OFF",
-           g_red_led_on ? "ON" : "OFF");
+           g_red_led_on ? "ON" : "OFF",
+           g_heartbeat_led_on ? "ON" : "OFF");
     printf("------------------\n\n");
 }
 
 int main() {
-    // Initialize stdio
+    // Initialize stdio (USB serial)
     stdio_init_all();
-    sleep_ms(2000);  // Wait for USB serial
+    sleep_ms(5000);  // Wait longer for USB serial connection
     
+    printf("\n\n\n");  // Clear lines
     print_banner();
     
     // Initialize LEDs
@@ -228,23 +293,64 @@ int main() {
     printf("[WiFi] Initializing WiFi...\n");
     if (!wifi_camera_init()) {
         printf("[ERROR] WiFi initialization failed\n");
+        g_wifi_connected = false;
         led_blink_error(5);
-        return -1;
+        // Keep blinking onboard LED rapidly to show error
+        printf("[ERROR] Entering error mode - onboard LED blinking rapidly\n");
+        while (1) {
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+            sleep_ms(100);
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+            sleep_ms(100);
+        }
     }
+    
+    // Initial heartbeat blink to show WiFi is initialized
+    printf("[LED] Testing onboard LED (heartbeat)...\n");
+    for (int i = 0; i < 3; i++) {
+        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+        sleep_ms(200);
+        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+        sleep_ms(200);
+    }
+    printf("[LED] ✓ Heartbeat LED will blink every 2 seconds to indicate connectivity\n");
     
     // Connect to server
     printf("[WiFi] Connecting to server %s:%d...\n", SERVER_IP, SERVER_PORT);
+    printf("[WiFi] Make sure Python server is running!\n");
     if (!wifi_camera_connect(SERVER_IP, SERVER_PORT)) {
         printf("[ERROR] Failed to connect to server\n");
+        printf("[ERROR] Check: 1) Server running 2) IP address correct 3) Firewall\n");
+        g_wifi_connected = false;
         led_blink_error(5);
-        return -1;
+        // Keep blinking onboard LED rapidly to show error
+        printf("[ERROR] Entering error mode - onboard LED blinking rapidly\n");
+        while (1) {
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+            sleep_ms(100);
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+            sleep_ms(100);
+        }
     }
     
-    printf("[WiFi] Connected to server!\n");
+    printf("[WiFi] ✓ Connected to server!\n");
+    g_wifi_connected = true;
+    g_last_heartbeat_time = to_ms_since_boot(get_absolute_time());
+    
+    // Test network connectivity with a simple connection test
+    printf("\n[Network] Testing connectivity to server...\n");
+    if (!wifi_camera_test_connectivity(SERVER_IP)) {
+        printf("[WARNING] Connectivity test failed, but continuing anyway...\n");
+        printf("[WARNING] Camera frames may not reach the server!\n");
+    } else {
+        printf("[Network] ✓ Server is reachable and responding\n");
+    }
     
     // Initialize camera
+    printf("\n[Camera] Initializing OV7670...\n");
     if (!camera_init()) {
         printf("[ERROR] Camera initialization failed\n");
+        printf("[ERROR] Check camera wiring and power!\n");
         led_blink_error(5);
         return -1;
     }
@@ -253,13 +359,19 @@ int main() {
     wifi_camera_ping_led_init();
     
     printf("\n[Main] Starting capture loop...\n");
-    printf("[Main] Press Ctrl+C to stop\n\n");
+    printf("[Main] Onboard LED: Blinks every 2 seconds (connected) or rapidly (error)\n");
+    printf("[Main] GREEN LED: Verification successful\n");
+    printf("[Main] RED LED: Verification failed\n");
+    printf("[Main] Press RESET to restart\n\n");
     
     uint32_t last_capture_time = 0;
     uint32_t loop_count = 0;
     
     // Main loop
     while (true) {
+        // Update heartbeat LED to show connectivity
+        update_heartbeat_led();
+        
         // Update ping LED state
         wifi_camera_ping_led_task();
         
@@ -284,10 +396,14 @@ int main() {
             printf("[WiFi] Sending frame to server...\n");
             if (!wifi_camera_send_frame(g_frame_buffer, FRAME_WIDTH, FRAME_HEIGHT)) {
                 printf("[ERROR] Failed to send frame\n");
+                printf("[ERROR] Connection may be lost!\n");
+                g_wifi_connected = false;  // Mark as disconnected for rapid LED blink
                 led_set_verification_status(false);
                 g_failed_verifications++;
                 continue;
             }
+            
+            g_wifi_connected = true;  // Frame sent successfully, connection is good
             
             printf("[WiFi] Frame sent, waiting for response...\n");
             
@@ -295,10 +411,14 @@ int main() {
             pose_response_t response;
             if (!wifi_camera_receive_response(&response, 5000)) {
                 printf("[ERROR] No response from server (timeout)\n");
+                printf("[ERROR] Connection may be lost!\n");
+                g_wifi_connected = false;  // Mark as disconnected for rapid LED blink
                 led_set_verification_status(false);
                 g_failed_verifications++;
                 continue;
             }
+            
+            g_wifi_connected = true;  // Response received, connection is good
             
             // Process response
             printf("[Response] Received:\n");

@@ -421,12 +421,12 @@ void led_blink_error(int count) {
 // Camera configuration (OV7670/OV2640 driver)
 static struct ov2640_config camera_config = {
     .sccb = i2c0,
-    .pin_sioc = 5,
-    .pin_siod = 4,
-    .pin_resetb = 2,
-    .pin_xclk = 3,
-    .pin_vsync = 6,
-    .pin_y2_pio_base = 10,  // D0-D7 start at GPIO 10
+    .pin_sioc = 21,  // SCL - Fixed to match CAMERA_WIRING.md
+    .pin_siod = 4,   // SDA
+    .pin_resetb = 17,  // RESET - Fixed
+    .pin_xclk = 3,   // XCLK
+    .pin_vsync = 16,  // VSYNC - Fixed
+    .pin_y2_pio_base = 6,  // D0-D7 start at GPIO 6 - Fixed
     .pio = pio0,
     .pio_sm = 0,
     .dma_channel = 0,

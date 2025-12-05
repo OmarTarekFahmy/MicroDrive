@@ -59,17 +59,23 @@ bool wifi_camera_init(void) {
     printf("[WiFi] Initializing...\n");
     
     // Initialize CYW43 (Pico W WiFi chip)
+    printf("[WiFi] Init CYW43 chip...\n");
     if (cyw43_arch_init()) {
-        printf("[WiFi] Failed to initialize CYW43\n");
+        printf("[WiFi] ERROR: Failed to initialize CYW43\n");
         return false;
     }
+    printf("[WiFi] CYW43 initialized successfully\n");
     
     // Enable station mode
     cyw43_arch_enable_sta_mode();
+    printf("[WiFi] Station mode enabled\n");
     
-    printf("[WiFi] Connecting to '%s'...\n", WIFI_SSID);
+    printf("[WiFi] Connecting to SSID: '%s'\n", WIFI_SSID);
+    printf("[WiFi] Password length: %d characters\n", strlen(WIFI_PASSWORD));
+    printf("[WiFi] Timeout: 30 seconds\n");
     
     // Connect to WiFi with timeout
+    printf("[WiFi] Starting connection attempt...\n");
     int result = cyw43_arch_wifi_connect_timeout_ms(
         WIFI_SSID, 
         WIFI_PASSWORD, 
@@ -78,13 +84,24 @@ bool wifi_camera_init(void) {
     );
     
     if (result != 0) {
-        printf("[WiFi] Connection failed with error %d\n", result);
+        printf("[WiFi] ERROR: Connection failed with error code %d\n", result);
+        printf("[WiFi] Common error codes:\n");
+        printf("         -1: Generic error\n");
+        printf("         -2: Authentication failed (check password)\n");
+        printf("         -3: Timeout (check SSID)\n");
         return false;
     }
     
     // Get and print IP address
     uint8_t* ip = (uint8_t*)&cyw43_state.netif[0].ip_addr.addr;
-    printf("[WiFi] Connected! IP: %d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
+    printf("[WiFi] ✓ Successfully connected to WiFi!\n");
+    printf("[WiFi] IP Address: %d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
+    
+    // Get gateway and netmask
+    uint8_t* gw = (uint8_t*)&cyw43_state.netif[0].gw.addr;
+    uint8_t* mask = (uint8_t*)&cyw43_state.netif[0].netmask.addr;
+    printf("[WiFi] Gateway: %d.%d.%d.%d\n", gw[0], gw[1], gw[2], gw[3]);
+    printf("[WiFi] Netmask: %d.%d.%d.%d\n", mask[0], mask[1], mask[2], mask[3]);
     
     g_state.connected = false;  // Socket not yet connected
     g_state.frame_count = 0;
@@ -485,4 +502,60 @@ static u8_t icmp_recv_callback(void* arg, struct raw_pcb* pcb, struct pbuf* p,
     // Return 0 to let lwIP continue processing (do NOT free the packet)
     // lwIP will handle the echo reply and free the packet
     return 0;
+}
+
+// ============================================================================
+// Network Connectivity Test
+// ============================================================================
+
+bool wifi_camera_test_connectivity(const char* server_ip) {
+    printf("\n[Connectivity Test] Testing connection to %s...\n", server_ip);
+    
+    // Parse server IP
+    ip_addr_t test_addr;
+    if (!ip4addr_aton(server_ip, &test_addr)) {
+        printf("[Connectivity Test] Invalid IP address\n");
+        return false;
+    }
+    
+    // Method 1: Try to create and connect a test TCP socket
+    printf("[Connectivity Test] Attempting TCP connection...\n");
+    struct tcp_pcb* test_pcb = tcp_new();
+    if (!test_pcb) {
+        printf("[Connectivity Test] Failed to create TCP PCB\n");
+        return false;
+    }
+    
+    bool connected = false;
+    err_t err = tcp_connect(test_pcb, &test_addr, SERVER_PORT, NULL);
+    
+    if (err == ERR_OK) {
+        // Give it time to connect
+        uint32_t start = to_ms_since_boot(get_absolute_time());
+        while ((to_ms_since_boot(get_absolute_time()) - start) < 3000) {
+            cyw43_arch_poll();
+            sleep_ms(10);
+            
+            if (test_pcb->state == ESTABLISHED) {
+                connected = true;
+                printf("[Connectivity Test] ✓ TCP connection successful!\n");
+                break;
+            }
+        }
+    }
+    
+    tcp_close(test_pcb);
+    
+    if (connected) {
+        printf("[Connectivity Test] ✓ Server is reachable at %s:%d\n", server_ip, SERVER_PORT);
+        return true;
+    } else {
+        printf("[Connectivity Test] ✗ Cannot reach server at %s:%d\n", server_ip, SERVER_PORT);
+        printf("[Connectivity Test] Please check:\n");
+        printf("  1. Python server is running\n");
+        printf("  2. Server IP is correct (Pico: 192.168.100.88, Server: %s)\n", server_ip);
+        printf("  3. Firewall allows port %d\n", SERVER_PORT);
+        printf("  4. Both devices on same network\n");
+        return false;
+    }
 }

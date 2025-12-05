@@ -16,6 +16,6 @@ void image_program_init(PIO pio, uint sm, uint offset, uint pin_base) {
 	sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
 
 	pio_sm_init(pio, sm, offset, &c);
-	pio_sm_set_enabled(pio, sm, true);
+	// Don't auto-enable - let capture function control it
 }
 %}

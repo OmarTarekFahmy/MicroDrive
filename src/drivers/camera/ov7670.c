@@ -20,10 +20,10 @@ void ov2640_init(struct ov2640_config *config) {
 	pwm_set_gpio_level(config->pin_xclk, 2);
 	pwm_set_enabled(slice_num, true);
 
-	// SCCB I2C @ 100 kHz
+	// SCCB I2C @ 100 kHz (100000 Hz)
 	gpio_set_function(config->pin_sioc, GPIO_FUNC_I2C);
 	gpio_set_function(config->pin_siod, GPIO_FUNC_I2C);
-	i2c_init(config->sccb, 10 * 1000);
+	i2c_init(config->sccb, 100 * 1000);  // 100 kHz
 	gpio_pull_up(config->pin_sioc);
     gpio_pull_up(config->pin_siod);
 
@@ -55,6 +55,11 @@ void ov2640_init(struct ov2640_config *config) {
 }
 
 void ov2640_capture_frame(struct ov2640_config *config) {
+	// Reset PIO state machine before capture
+	pio_sm_set_enabled(config->pio, config->pio_sm, false);
+	pio_sm_clear_fifos(config->pio, config->pio_sm);
+	pio_sm_restart(config->pio, config->pio_sm);
+	
 	dma_channel_config c = dma_channel_get_default_config(config->dma_channel);
 	channel_config_set_read_increment(&c, false);
 	channel_config_set_write_increment(&c, true);
@@ -73,14 +78,26 @@ void ov2640_capture_frame(struct ov2640_config *config) {
 	while (gpio_get(config->pin_vsync) == true);
 	while (gpio_get(config->pin_vsync) == false);
 	
-	// pio_sm_set_enabled(config->pio, config->pio_sm, true);
-	//pio_sm_set_enabled(config->pio, config->pio_sm, true);
-	// while (gpio_get(15) == true);
-	// while (gpio_get(15) == false);
-	// while (gpio_get(15) == true);
-	// while (gpio_get(15) == false);
+	// Enable PIO to start capturing data
+	pio_sm_set_enabled(config->pio, config->pio_sm, true);
+	
 	dma_channel_start(config->dma_channel);
-	dma_channel_wait_for_finish_blocking(config->dma_channel);
+	
+	// Wait with timeout (5 seconds)
+	absolute_time_t timeout = make_timeout_time_ms(5000);
+	while (dma_channel_is_busy(config->dma_channel)) {
+		if (time_reached(timeout)) {
+			printf("[Camera] DMA timeout! Only %lu bytes transferred\n", 
+				config->image_buf_size - dma_channel_hw_addr(config->dma_channel)->transfer_count);
+			dma_channel_abort(config->dma_channel);
+			pio_sm_set_enabled(config->pio, config->pio_sm, false);
+			return;
+		}
+		tight_loop_contents();
+	}
+	
+	// Disable PIO after capture
+	pio_sm_set_enabled(config->pio, config->pio_sm, false);
 }
 
 void ov2640_reg_write(struct ov2640_config *config, uint8_t reg, uint8_t value) {

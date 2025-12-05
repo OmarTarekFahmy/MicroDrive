@@ -76,45 +76,103 @@ target_link_libraries(wifi_camera
     hardware_dma
 )
 
-# Enable UART stdio for debugging; disable USB stdio
-pico_enable_stdio_usb(wifi_camera 0)
-pico_enable_stdio_uart(wifi_camera 1)
+# Enable USB stdio for debugging via USB serial (no UART adapter needed!)
+pico_enable_stdio_usb(wifi_camera 1)
+pico_enable_stdio_uart(wifi_camera 0)
 
 # Create UF2 and map binaries
 pico_add_extra_outputs(wifi_camera)
 
 #--------------------------------------------------------------------
-# USB Camera Project (OV7670 with TinyUSB Video Class)
+# Serial Test (Simple USB Serial Test)
 #--------------------------------------------------------------------
-add_executable(usb_camera
-    main.c
-    usb_descriptors.c
-    drivers/camera/ov7670.c
+add_executable(test_serial
+    test_serial.c
 )
 
-# Generate PIO header for image capture
-pico_generate_pio_header(usb_camera ${CMAKE_CURRENT_LIST_DIR}/drivers/camera/image.pio)
-
-# Include project directories
-target_include_directories(usb_camera PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}
-    ${CMAKE_CURRENT_LIST_DIR}/drivers/camera
-)
-
-# Link required Pico libraries including TinyUSB
-target_link_libraries(usb_camera
+target_link_libraries(test_serial
     pico_stdlib
-    hardware_i2c
-    hardware_pio
-    hardware_pwm
-    hardware_dma
-    tinyusb_device
-    tinyusb_board
 )
 
-# Enable UART stdio for debugging; USB is used for video
-pico_enable_stdio_usb(usb_camera 0)
-pico_enable_stdio_uart(usb_camera 1)
+pico_enable_stdio_usb(test_serial 1)
+pico_enable_stdio_uart(test_serial 0)
 
-# Create UF2 and map binaries
-pico_add_extra_outputs(usb_camera)
+pico_add_extra_outputs(test_serial)
+
+#--------------------------------------------------------------------
+# WiFi Simple Test (WiFi connection test without camera)
+#--------------------------------------------------------------------
+add_executable(test_wifi_simple
+    test_wifi_simple.c
+)
+
+target_include_directories(test_wifi_simple PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}
+)
+
+target_link_libraries(test_wifi_simple
+    pico_stdlib
+    pico_cyw43_arch_lwip_poll
+)
+
+pico_enable_stdio_usb(test_wifi_simple 1)
+pico_enable_stdio_uart(test_wifi_simple 0)
+
+pico_add_extra_outputs(test_wifi_simple)
+
+#--------------------------------------------------------------------
+# Network Only Test (WiFi + TCP without camera)
+#--------------------------------------------------------------------
+add_executable(test_network_only
+    test_network_only.c
+)
+
+target_include_directories(test_network_only PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}
+)
+
+target_link_libraries(test_network_only
+    pico_stdlib
+    pico_cyw43_arch_lwip_poll
+)
+
+pico_enable_stdio_usb(test_network_only 1)
+pico_enable_stdio_uart(test_network_only 0)
+
+pico_add_extra_outputs(test_network_only)
+
+# #--------------------------------------------------------------------
+# # USB Camera Project (OV7670 with TinyUSB Video Class)
+# #--------------------------------------------------------------------
+# add_executable(usb_camera
+#     main.c
+#     usb_descriptors.c
+#     drivers/camera/ov7670.c
+# )
+
+# # Generate PIO header for image capture
+# pico_generate_pio_header(usb_camera ${CMAKE_CURRENT_LIST_DIR}/drivers/camera/image.pio)
+
+# # Include project directories
+# target_include_directories(usb_camera PRIVATE
+#     ${CMAKE_CURRENT_LIST_DIR}
+#     ${CMAKE_CURRENT_LIST_DIR}/drivers/camera
+# )
+
+# # Link required Pico libraries including TinyUSB
+# target_link_libraries(usb_camera
+#     pico_stdlib
+#     hardware_i2c
+#     hardware_pio
+#     hardware_pwm
+#     hardware_dma
+#     tinyusb_device
+#     tinyusb_board
+# )
+
+# # Enable UART stdio for debugging; USB is used for video
+# pico_enable_stdio_usb(usb_camera 0)
+# pico_enable_stdio_uart(usb_camera 1)
+
+# # Create UF2 and map binaries
+# pico_add_extra_outputs(usb_camera)

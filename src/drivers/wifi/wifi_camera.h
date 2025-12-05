@@ -21,11 +21,11 @@
 #define PING_LED_DURATION_MS 3000   // LED on duration when pinged
 
 // WiFi credentials (change these!)
-#define WIFI_SSID       "youssef's Galaxy S21 Ultra 5G"
-#define WIFI_PASSWORD   "Ctiger@YM123"
+#define WIFI_SSID       "WE_3FAA50"
+#define WIFI_PASSWORD   "7570ddaf"  // Corrected password
 
 // Server settings (laptop IP and port)
-#define SERVER_IP       "10.96.19.200"  // Change to your laptop's IP
+#define SERVER_IP       "192.168.100.3"  // Change to your laptop's IP
 #define SERVER_PORT     8888
 
 // Streaming protocol
@@ -146,5 +146,12 @@ void wifi_camera_ping_led_init(void);
  * Automatically turns off LED after configured duration
  */
 void wifi_camera_ping_led_task(void);
+
+/**
+ * @brief Test network connectivity by pinging the server
+ * @param server_ip Server IP address to ping
+ * @return true if server responds to ping, false otherwise
+ */
+bool wifi_camera_test_connectivity(const char* server_ip);
 
 #endif // WIFI_CAMERA_H
