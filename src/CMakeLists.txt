@@ -84,9 +84,44 @@ pico_enable_stdio_uart(wifi_camera 0)
 pico_add_extra_outputs(wifi_camera)
 
 #--------------------------------------------------------------------
+# WiFi Camera Project - SIMPLE VERSION (using working USB camera code)
+#--------------------------------------------------------------------
+add_executable(wifi_camera_simple
+    main_wifi_camera_simple.c
+    drivers/camera/ov7670.c
+)
+
+# Generate PIO header for image capture
+pico_generate_pio_header(wifi_camera_simple ${CMAKE_CURRENT_LIST_DIR}/drivers/camera/image.pio)
+
+# Include project directories
+target_include_directories(wifi_camera_simple PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/drivers/camera
+)
+
+# Link required Pico libraries including WiFi + LWIP
+target_link_libraries(wifi_camera_simple
+    pico_stdlib
+    pico_cyw43_arch_lwip_poll
+    hardware_i2c
+    hardware_pio
+    hardware_pwm
+    hardware_dma
+)
+
+# Enable USB stdio for debugging
+pico_enable_stdio_usb(wifi_camera_simple 1)
+pico_enable_stdio_uart(wifi_camera_simple 0)
+
+# Create UF2 and map binaries
+pico_add_extra_outputs(wifi_camera_simple)
+
+#--------------------------------------------------------------------
 # Serial Test (Simple USB Serial Test)
 #--------------------------------------------------------------------
-add_executable(test_serial
+add_executable(
+    test_serial
     test_serial.c
 )
 

@@ -139,9 +139,9 @@ static struct ov2640_config camera_config = {
     .pin_xclk = 3,           // Master clock for camera (GP3)
     .pin_vsync = 16,         // Vertical sync (GP16)
     .pin_y2_pio_base = 6,    // D0-D7 start at GPIO 6 (GP6-GP13)
-    .pio = pio0,
+    .pio = pio1,             // Use PIO1 to avoid conflict with WiFi (cyw43 uses PIO0)
     .pio_sm = 0,
-    .dma_channel = 0,
+    .dma_channel = -1,        // Use DMA channel 1 to avoid conflict with WiFi
     .image_buf = g_frame_buffer,
     .image_buf_size = FRAME_SIZE
 };
@@ -209,7 +209,12 @@ bool camera_capture_frame(uint8_t* buffer, size_t buffer_size) {
     printf("[Camera] VSYNC detected, starting DMA capture...\n");
     
     // Capture frame using ov2640 driver
-    ov2640_capture_frame(&camera_config);
+    bool capture_success = ov2640_capture_frame(&camera_config);
+    
+    if (!capture_success) {
+        printf("[Camera] ✗ Frame capture failed!\n");
+        return false;
+    }
     
     // Frame data is already in g_frame_buffer (camera_config.image_buf)
     // No need to copy if buffer points to g_frame_buffer

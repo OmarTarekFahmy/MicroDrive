@@ -437,6 +437,19 @@ static struct ov2640_config camera_config = {
 bool camera_init(void) {
     printf("\n[Camera] Initializing OV7670...\n");
     
+    gpio_init(camera_config.pin_vsync);
+    gpio_set_dir(camera_config.pin_vsync, GPIO_IN);
+    gpio_pull_down(camera_config.pin_vsync);   // or pull_up if your board idles high
+
+    // Data pins D0..D7 (if your PIO program expects them as inputs)
+    for (int pin = camera_config.pin_y2_pio_base;
+         pin < camera_config.pin_y2_pio_base + 8;
+         ++pin) {
+        gpio_init(pin);
+        gpio_set_dir(pin, GPIO_IN);
+        // no pull needed usually, they’re driven by camera
+    }
+
     ov2640_init(&camera_config);
     
     // Read camera ID to verify I2C communication

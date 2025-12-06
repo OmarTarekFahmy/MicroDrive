@@ -43,6 +43,18 @@ void ov2640_init(struct ov2640_config *config) {
 	ov2640_regs_write(config, OV7670_yuv); // set format OV7670_yuv // OV7670_rgb
 	ov2640_regs_write(config, OV7670_init);
 	OV7670_set_size(config, OV7670_SIZE_DIV2);
+	
+	// Explicitly configure COM10 to ensure HREF mode (not HSYNC)
+	// Bit 6 (0x40) = 0 for HREF, = 1 for HSYNC
+	// Bit 5 (0x20) = 1 to suppress PCLK during horizontal blank
+	uint8_t com10_val = 0x20; // PCLK suppression on, HREF mode
+	ov2640_reg_write(config, OV7670_REG_COM10, com10_val);
+	printf("[Camera Init] COM10 configured: 0x%02X (HREF mode)\n", com10_val);
+	
+	// Verify COM10 setting
+	uint8_t com10_read = ov2640_reg_read(config, OV7670_REG_COM10);
+	printf("[Camera Init] COM10 readback: 0x%02X\n", com10_read);
+	
 	sleep_ms(300);
 	// ov2640_regs_write(config, OV7670_Reg1);//OV_reg
 	// ov2640_regs_write(config, ov7670_qvga_yuv422);
@@ -52,9 +64,14 @@ void ov2640_init(struct ov2640_config *config) {
 	// Enable image RX PIO
 	uint offset = pio_add_program(config->pio, &image_program);
 	image_program_init(config->pio, config->pio_sm, offset, config->pin_y2_pio_base);
+	
+	if (config->dma_channel < 0) {
+        config->dma_channel = dma_claim_unused_channel(true);
+        printf("[Camera Init] Using DMA channel %d\n", config->dma_channel);
+    }
 }
 
-void ov2640_capture_frame(struct ov2640_config *config) {
+bool ov2640_capture_frame(struct ov2640_config *config) {
 	// Reset PIO state machine before capture
 	pio_sm_set_enabled(config->pio, config->pio_sm, false);
 	pio_sm_clear_fifos(config->pio, config->pio_sm);
@@ -78,7 +95,7 @@ void ov2640_capture_frame(struct ov2640_config *config) {
 	while (gpio_get(config->pin_vsync) == true);
 	while (gpio_get(config->pin_vsync) == false);
 	
-	// Enable PIO to start capturing data
+	// Enable PIO to start capturing data IMMEDIATELY after VSYNC
 	pio_sm_set_enabled(config->pio, config->pio_sm, true);
 	
 	dma_channel_start(config->dma_channel);
@@ -91,13 +108,14 @@ void ov2640_capture_frame(struct ov2640_config *config) {
 				config->image_buf_size - dma_channel_hw_addr(config->dma_channel)->transfer_count);
 			dma_channel_abort(config->dma_channel);
 			pio_sm_set_enabled(config->pio, config->pio_sm, false);
-			return;
+			return false;
 		}
 		tight_loop_contents();
 	}
 	
 	// Disable PIO after capture
 	pio_sm_set_enabled(config->pio, config->pio_sm, false);
+	return true;
 }
 
 void ov2640_reg_write(struct ov2640_config *config, uint8_t reg, uint8_t value) {
