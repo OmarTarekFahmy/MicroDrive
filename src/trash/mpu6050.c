@@ -43,8 +43,8 @@ static const float ALPHA = 0.96f;
 // Dead zone threshold - ignore small gyro readings (reduced for more sensitivity)
 static const float GYRO_DEADZONE = 0.3f;  // Lower value = more sensitive
 
-// Z-axis specific settings (reduced dead zone to allow movement)
-static const float GYRO_DEADZONE_Z = 1.5f;  // Balanced dead zone for Z-axis
+// Z-axis specific settings (much higher dead zone to prevent drift)
+static const float GYRO_DEADZONE_Z = 3.0f;  // Higher dead zone for Z to prevent random movement
 static uint32_t stationary_count = 0;
 static const uint32_t STATIONARY_THRESHOLD = 5; // 0.25 second at 50ms updates (faster)
 static const float Z_DRIFT_CORRECTION = 0.85f;  // Very aggressive correction when stationary
@@ -153,8 +153,7 @@ void mpu6050_setup(void) {
 void mpu6050_update(void) {
     // Read accelerometer data with error checking
     uint8_t accel_buffer[6];
-    mpu_read(REG_ACCEL_XOUT_H, accel_buffer, 6);
-    int result = PICO_OK;
+    int result = i2c_read_timeout_us(MPU_I2C_PORT, MPU_ADDR, accel_buffer, 6, false, 10000);
     if (result == PICO_ERROR_GENERIC || result == PICO_ERROR_TIMEOUT) {
         printf("I2C read error, reinitializing...\n");
         // Reinitialize I2C on error
@@ -206,28 +205,37 @@ void mpu6050_update(void) {
     angle_y = ALPHA * (angle_y + gy_dps * dt) + (1.0f - ALPHA) * accel_angle_y;
     
     // For Z-axis (yaw): Only gyro available (no accel reference)
-    // Apply simple integration with dead zone
+    // Apply additional filtering to reduce noise accumulation
     
-    // Apply Z-specific dead zone
+    // Apply Z-specific dead zone BEFORE filtering
     if (fabsf(gz_dps) < GYRO_DEADZONE_Z) {
         gz_dps = 0;
-        stationary_count++;
-    } else {
-        stationary_count = 0;
     }
     
     // Low-pass filter on gyro rate to smooth out noise
-    float filtered_gz = 0.8f * gz_dps + 0.2f * last_z_rate;
+    float filtered_gz = 0.7f * gz_dps + 0.3f * last_z_rate;
     last_z_rate = filtered_gz;
     
-    // Integrate gyro to get angle
-    angle_z += filtered_gz * dt;
+    // Check if sensor is stationary (all gyro rates near zero)
+    bool is_stationary = (fabsf(gx_dps) < GYRO_DEADZONE && 
+                         fabsf(gy_dps) < GYRO_DEADZONE && 
+                         fabsf(filtered_gz) < GYRO_DEADZONE_Z);
     
-    // Gentle drift correction when stationary for extended period
-    if (stationary_count > 20) {  // 1 second at 50ms updates
-        angle_z *= 0.98f;  // Gentle pull toward zero
-        if (fabsf(angle_z) < 1.0f) {
-            angle_z = 0.0f;
+    if (is_stationary) {
+        stationary_count++;
+        // After being stationary for a while, aggressively correct Z drift toward 0
+        if (stationary_count > STATIONARY_THRESHOLD) {
+            angle_z *= Z_DRIFT_CORRECTION;
+            // Snap to zero if close
+            if (fabsf(angle_z) < 2.0f) {
+                angle_z = 0.0f;
+            }
+        }
+    } else {
+        stationary_count = 0;
+        // Only integrate if there's significant rotation (above dead zone)
+        if (fabsf(filtered_gz) > GYRO_DEADZONE_Z) {
+            angle_z += filtered_gz * dt;
         }
     }
     

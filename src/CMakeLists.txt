@@ -15,9 +15,10 @@ pico_sdk_init()
 # Celestial Lock Project (Main project with gyro, servo, touch, buzzer, LEDs)
 #--------------------------------------------------------------------
 add_executable(servo_test
-    ServoGyroWorking_needsTweaks.c
+    main.c
     drivers/servo/servo.c
     drivers/Gyro/mpu6050.c
+    drivers/mpu6050/MPU6050.c
     drivers/lcd/lcd_i2c.c
     drivers/touch/touch_sensor.c
     drivers/buzzer/buzzer.c
@@ -28,6 +29,7 @@ target_include_directories(servo_test PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
     ${CMAKE_CURRENT_LIST_DIR}/drivers/servo
     ${CMAKE_CURRENT_LIST_DIR}/drivers/Gyro
+    ${CMAKE_CURRENT_LIST_DIR}/drivers/mpu6050
     ${CMAKE_CURRENT_LIST_DIR}/drivers/lcd
     ${CMAKE_CURRENT_LIST_DIR}/drivers/touch
     ${CMAKE_CURRENT_LIST_DIR}/drivers/buzzer
@@ -40,7 +42,7 @@ target_link_libraries(servo_test
     hardware_i2c
 )
 
-# Enable UART stdio for debugging (USB has issues with TinyUSB)
+# Enable UART stdio for debugging
 pico_enable_stdio_usb(servo_test 0)
 pico_enable_stdio_uart(servo_test 1)
 
@@ -85,36 +87,47 @@ pico_add_extra_outputs(wifi_camera)
 
 #--------------------------------------------------------------------
 # USB Camera Project (OV7670 with TinyUSB Video Class)
+# COMMENTED OUT: Old drivers not available
 #--------------------------------------------------------------------
-add_executable(usb_camera
-    main.c
-    usb_descriptors.c
-    drivers/camera/ov7670.c
-)
+# add_executable(usb_camera
+#     main.c
+#     usb_descriptors.c
+#     drivers/camera/ov7670.c
+#     drivers/servo/servo.c
+#     drivers/Gyro/mpu6050.c
+#     drivers/lcd/lcd_i2c.c
+#     drivers/touch/touch_sensor.c
+#     drivers/buzzer/buzzer.c
+# )
 
-# Generate PIO header for image capture
-pico_generate_pio_header(usb_camera ${CMAKE_CURRENT_LIST_DIR}/drivers/camera/image.pio)
-
-# Include project directories
-target_include_directories(usb_camera PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}
-    ${CMAKE_CURRENT_LIST_DIR}/drivers/camera
-)
-
-# Link required Pico libraries including TinyUSB
-target_link_libraries(usb_camera
-    pico_stdlib
-    hardware_i2c
-    hardware_pio
-    hardware_pwm
-    hardware_dma
-    tinyusb_device
-    tinyusb_board
-)
-
-# Enable UART stdio for debugging; USB is used for video
-pico_enable_stdio_usb(usb_camera 0)
-pico_enable_stdio_uart(usb_camera 1)
-
-# Create UF2 and map binaries
-pico_add_extra_outputs(usb_camera)
+# # Generate PIO header for image capture
+# pico_generate_pio_header(usb_camera ${CMAKE_CURRENT_LIST_DIR}/drivers/camera/image.pio)
+# 
+# # Include project directories
+# target_include_directories(usb_camera PRIVATE
+#     ${CMAKE_CURRENT_LIST_DIR}
+#     ${CMAKE_CURRENT_LIST_DIR}/drivers/camera
+#     ${CMAKE_CURRENT_LIST_DIR}/drivers/servo
+#     ${CMAKE_CURRENT_LIST_DIR}/drivers/Gyro
+#     ${CMAKE_CURRENT_LIST_DIR}/drivers/lcd
+#     ${CMAKE_CURRENT_LIST_DIR}/drivers/touch
+#     ${CMAKE_CURRENT_LIST_DIR}/drivers/buzzer
+# )
+# 
+# # Link required Pico libraries including TinyUSB
+# target_link_libraries(usb_camera
+#     pico_stdlib
+#     hardware_i2c
+#     hardware_pio
+#     hardware_pwm
+#     hardware_dma
+#     tinyusb_device
+#     tinyusb_board
+# )
+# 
+# # Enable UART stdio for debugging; USB is used for video
+# pico_enable_stdio_usb(usb_camera 0)
+# pico_enable_stdio_uart(usb_camera 1)
+# 
+# # Create UF2 and map binaries
+# pico_add_extra_outputs(usb_camera)
