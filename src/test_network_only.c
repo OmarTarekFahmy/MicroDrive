@@ -14,11 +14,11 @@
 #include "lwip/tcp.h"
 
 // WiFi credentials
-#define WIFI_SSID       "WE_3FAA50"
-#define WIFI_PASSWORD   "7570ddaf"
+#define WIFI_SSID       "2004ahmed"
+#define WIFI_PASSWORD   "2004ahmed"
 
 // Server settings
-#define SERVER_IP       "192.168.100.3"
+#define SERVER_IP       "172.20.10.3"
 #define SERVER_PORT     8888
 
 static bool tcp_connected = false;

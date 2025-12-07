@@ -20,9 +20,9 @@
 #define FRAME_HEIGHT 240
 
 // WiFi credentials
-#define WIFI_SSID "WE_3FAA50"
-#define WIFI_PASSWORD "7570ddaf"
-#define SERVER_IP "192.168.100.3"
+#define WIFI_SSID "277353"
+#define WIFI_PASSWORD "2004ahmed"
+#define SERVER_IP "172.20.10.3"
 #define SERVER_PORT 8888
 
 // Frame buffer - same as USB camera

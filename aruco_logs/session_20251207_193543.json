@@ -1,0 +1,1119 @@
+[
+  {
+    "timestamp": "2025-12-07T19:36:47.196217",
+    "frame_id": 0,
+    "request": {
+      "frame_id": 0,
+      "width": 320,
+      "height": 240,
+      "checksum": 15973649
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": true,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": 0.9130445996063068,
+        "pos_y_mm": -6.195008575487409,
+        "pos_z_mm": 209.41173151066474,
+        "rot_x_deg": 177.64648885030968,
+        "rot_y_deg": 0.5249034289589631,
+        "rot_z_deg": -0.8383028409337825,
+        "scale_percent": 168.315185546875
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:36:48.710716",
+    "frame_id": 1,
+    "request": {
+      "frame_id": 1,
+      "width": 320,
+      "height": 240,
+      "checksum": 14790210
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:36:50.248167",
+    "frame_id": 2,
+    "request": {
+      "frame_id": 2,
+      "width": 320,
+      "height": 240,
+      "checksum": 14771412
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:36:51.387989",
+    "frame_id": 3,
+    "request": {
+      "frame_id": 3,
+      "width": 320,
+      "height": 240,
+      "checksum": 14617789
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": true,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": 1.3311318592764811,
+        "pos_y_mm": -6.194388637996673,
+        "pos_z_mm": 209.41544893994748,
+        "rot_x_deg": 177.6603248304175,
+        "rot_y_deg": 0.539590312292865,
+        "rot_z_deg": -0.8360327546315967,
+        "scale_percent": 168.315185546875
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:36:53.530531",
+    "frame_id": 4,
+    "request": {
+      "frame_id": 4,
+      "width": 320,
+      "height": 240,
+      "checksum": 14926528
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:36:54.506711",
+    "frame_id": 5,
+    "request": {
+      "frame_id": 5,
+      "width": 320,
+      "height": 240,
+      "checksum": 14929288
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:36:55.805918",
+    "frame_id": 6,
+    "request": {
+      "frame_id": 6,
+      "width": 320,
+      "height": 240,
+      "checksum": 14924647
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": true,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": 1.3311318592764811,
+        "pos_y_mm": -6.194388637996673,
+        "pos_z_mm": 209.41544893994748,
+        "rot_x_deg": 177.6603248304175,
+        "rot_y_deg": 0.539590312292865,
+        "rot_z_deg": -0.8360327546315967,
+        "scale_percent": 168.315185546875
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:36:56.820374",
+    "frame_id": 7,
+    "request": {
+      "frame_id": 7,
+      "width": 320,
+      "height": 240,
+      "checksum": 14921722
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": true,
+      "unlock_ready": 1,
+      "pose_data": {
+        "pos_x_mm": 0.9130445996063068,
+        "pos_y_mm": -6.195008575487409,
+        "pos_z_mm": 209.41173151066474,
+        "rot_x_deg": 177.64648885030968,
+        "rot_y_deg": 0.5249034289589631,
+        "rot_z_deg": -0.8383028409337825,
+        "scale_percent": 168.315185546875
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:36:58.004639",
+    "frame_id": 8,
+    "request": {
+      "frame_id": 8,
+      "width": 320,
+      "height": 240,
+      "checksum": 14928463
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": true,
+      "unlock_ready": 1,
+      "pose_data": {
+        "pos_x_mm": 0.9130445996063068,
+        "pos_y_mm": -6.195008575487409,
+        "pos_z_mm": 209.41173151066474,
+        "rot_x_deg": 177.64648885030968,
+        "rot_y_deg": 0.5249034289589631,
+        "rot_z_deg": -0.8383028409337825,
+        "scale_percent": 168.315185546875
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:36:59.502493",
+    "frame_id": 9,
+    "request": {
+      "frame_id": 9,
+      "width": 320,
+      "height": 240,
+      "checksum": 14886886
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": true,
+      "unlock_ready": 1,
+      "pose_data": {
+        "pos_x_mm": 0.9130445996063068,
+        "pos_y_mm": -6.195008575487409,
+        "pos_z_mm": 209.41173151066474,
+        "rot_x_deg": 177.64648885030968,
+        "rot_y_deg": 0.5249034289589631,
+        "rot_z_deg": -0.8383028409337825,
+        "scale_percent": 168.315185546875
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:00.630453",
+    "frame_id": 10,
+    "request": {
+      "frame_id": 10,
+      "width": 320,
+      "height": 240,
+      "checksum": 14907497
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": true,
+      "unlock_ready": 1,
+      "pose_data": {
+        "pos_x_mm": 0.9130445996063068,
+        "pos_y_mm": -6.195008575487409,
+        "pos_z_mm": 209.41173151066474,
+        "rot_x_deg": 177.64648885030968,
+        "rot_y_deg": 0.5249034289589631,
+        "rot_z_deg": -0.8383028409337825,
+        "scale_percent": 168.315185546875
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:04.148864",
+    "frame_id": 11,
+    "request": {
+      "frame_id": 11,
+      "width": 320,
+      "height": 240,
+      "checksum": 14878859
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": true,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": 0.9130445996063068,
+        "pos_y_mm": -6.195008575487409,
+        "pos_z_mm": 209.41173151066474,
+        "rot_x_deg": 177.64648885030968,
+        "rot_y_deg": 0.5249034289589631,
+        "rot_z_deg": -0.8383028409337825,
+        "scale_percent": 168.315185546875
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:08.036750",
+    "frame_id": 12,
+    "request": {
+      "frame_id": 12,
+      "width": 320,
+      "height": 240,
+      "checksum": 14673165
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": true,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": 0.9130445996063068,
+        "pos_y_mm": -6.195008575487409,
+        "pos_z_mm": 209.41173151066474,
+        "rot_x_deg": 177.64648885030968,
+        "rot_y_deg": 0.5249034289589631,
+        "rot_z_deg": -0.8383028409337825,
+        "scale_percent": 168.315185546875
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:11.634016",
+    "frame_id": 13,
+    "request": {
+      "frame_id": 13,
+      "width": 320,
+      "height": 240,
+      "checksum": 14647997
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": true,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": 0.9130445996063068,
+        "pos_y_mm": -6.195008575487409,
+        "pos_z_mm": 209.41173151066474,
+        "rot_x_deg": 177.64648885030968,
+        "rot_y_deg": 0.5249034289589631,
+        "rot_z_deg": -0.8383028409337825,
+        "scale_percent": 168.315185546875
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:12.779838",
+    "frame_id": 14,
+    "request": {
+      "frame_id": 14,
+      "width": 320,
+      "height": 240,
+      "checksum": 14788120
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": true,
+      "unlock_ready": 1,
+      "pose_data": {
+        "pos_x_mm": 0.9130445996063068,
+        "pos_y_mm": -6.195008575487409,
+        "pos_z_mm": 209.41173151066474,
+        "rot_x_deg": 177.64648885030968,
+        "rot_y_deg": 0.5249034289589631,
+        "rot_z_deg": -0.8383028409337825,
+        "scale_percent": 168.315185546875
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:13.837946",
+    "frame_id": 15,
+    "request": {
+      "frame_id": 15,
+      "width": 320,
+      "height": 240,
+      "checksum": 14884904
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": true,
+      "unlock_ready": 1,
+      "pose_data": {
+        "pos_x_mm": 0.9130445996063068,
+        "pos_y_mm": -6.195008575487409,
+        "pos_z_mm": 209.41173151066474,
+        "rot_x_deg": 177.64648885030968,
+        "rot_y_deg": 0.5249034289589631,
+        "rot_z_deg": -0.8383028409337825,
+        "scale_percent": 168.315185546875
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:15.941254",
+    "frame_id": 16,
+    "request": {
+      "frame_id": 16,
+      "width": 320,
+      "height": 240,
+      "checksum": 14875088
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:16.992992",
+    "frame_id": 17,
+    "request": {
+      "frame_id": 17,
+      "width": 320,
+      "height": 240,
+      "checksum": 15002033
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": true,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": 1.3311318592764811,
+        "pos_y_mm": -6.194388637996673,
+        "pos_z_mm": 209.41544893994748,
+        "rot_x_deg": 177.6603248304175,
+        "rot_y_deg": 0.539590312292865,
+        "rot_z_deg": -0.8360327546315967,
+        "scale_percent": 168.315185546875
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:18.314423",
+    "frame_id": 18,
+    "request": {
+      "frame_id": 18,
+      "width": 320,
+      "height": 240,
+      "checksum": 15058305
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": true,
+      "unlock_ready": 1,
+      "pose_data": {
+        "pos_x_mm": 0.9130445996063068,
+        "pos_y_mm": -6.195008575487409,
+        "pos_z_mm": 209.41173151066474,
+        "rot_x_deg": 177.64648885030968,
+        "rot_y_deg": 0.5249034289589631,
+        "rot_z_deg": -0.8383028409337825,
+        "scale_percent": 168.315185546875
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:19.323471",
+    "frame_id": 19,
+    "request": {
+      "frame_id": 19,
+      "width": 320,
+      "height": 240,
+      "checksum": 15647164
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:20.766506",
+    "frame_id": 20,
+    "request": {
+      "frame_id": 20,
+      "width": 320,
+      "height": 240,
+      "checksum": 16705538
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:26.279780",
+    "frame_id": 21,
+    "request": {
+      "frame_id": 21,
+      "width": 320,
+      "height": 240,
+      "checksum": 16710633
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:43.487023",
+    "frame_id": 22,
+    "request": {
+      "frame_id": 22,
+      "width": 320,
+      "height": 240,
+      "checksum": 16652122
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:44.391042",
+    "frame_id": 23,
+    "request": {
+      "frame_id": 23,
+      "width": 320,
+      "height": 240,
+      "checksum": 17864757
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:45.643404",
+    "frame_id": 24,
+    "request": {
+      "frame_id": 24,
+      "width": 320,
+      "height": 240,
+      "checksum": 17359119
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:47.283568",
+    "frame_id": 25,
+    "request": {
+      "frame_id": 25,
+      "width": 320,
+      "height": 240,
+      "checksum": 17336918
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:48.265211",
+    "frame_id": 26,
+    "request": {
+      "frame_id": 26,
+      "width": 320,
+      "height": 240,
+      "checksum": 16858408
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:49.516457",
+    "frame_id": 27,
+    "request": {
+      "frame_id": 27,
+      "width": 320,
+      "height": 240,
+      "checksum": 16065123
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:50.651380",
+    "frame_id": 28,
+    "request": {
+      "frame_id": 28,
+      "width": 320,
+      "height": 240,
+      "checksum": 16059294
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:51.891256",
+    "frame_id": 29,
+    "request": {
+      "frame_id": 29,
+      "width": 320,
+      "height": 240,
+      "checksum": 15957817
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:53.430998",
+    "frame_id": 30,
+    "request": {
+      "frame_id": 30,
+      "width": 320,
+      "height": 240,
+      "checksum": 15977417
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:54.964800",
+    "frame_id": 31,
+    "request": {
+      "frame_id": 31,
+      "width": 320,
+      "height": 240,
+      "checksum": 16011906
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:56.038521",
+    "frame_id": 32,
+    "request": {
+      "frame_id": 32,
+      "width": 320,
+      "height": 240,
+      "checksum": 16076176
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:57.461834",
+    "frame_id": 33,
+    "request": {
+      "frame_id": 33,
+      "width": 320,
+      "height": 240,
+      "checksum": 16537697
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": -13.173690499003284,
+        "pos_y_mm": 27.302564735173725,
+        "pos_z_mm": 264.6920463830409,
+        "rot_x_deg": 178.2216821599972,
+        "rot_y_deg": -2.2174551502796893,
+        "rot_z_deg": -89.20178063512266,
+        "scale_percent": 133.66001892089844
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:37:58.848895",
+    "frame_id": 34,
+    "request": {
+      "frame_id": 34,
+      "width": 320,
+      "height": 240,
+      "checksum": 16511239
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:38:00.080670",
+    "frame_id": 35,
+    "request": {
+      "frame_id": 35,
+      "width": 320,
+      "height": 240,
+      "checksum": 16559567
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": -17.186466013513634,
+        "pos_y_mm": 23.84881371974502,
+        "pos_z_mm": 257.19628939672424,
+        "rot_x_deg": -179.08429348491342,
+        "rot_y_deg": -10.866665088875141,
+        "rot_z_deg": -89.66869829534824,
+        "scale_percent": 138.6001434326172
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:38:01.152481",
+    "frame_id": 36,
+    "request": {
+      "frame_id": 36,
+      "width": 320,
+      "height": 240,
+      "checksum": 16563242
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:38:02.873160",
+    "frame_id": 37,
+    "request": {
+      "frame_id": 37,
+      "width": 320,
+      "height": 240,
+      "checksum": 16553996
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": -18.972050371136326,
+        "pos_y_mm": 24.495143146631467,
+        "pos_z_mm": 257.9625312411427,
+        "rot_x_deg": 179.55149146588636,
+        "rot_y_deg": -9.470382763017902,
+        "rot_z_deg": -89.44491502725751,
+        "scale_percent": 138.6001434326172
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:38:04.277711",
+    "frame_id": 38,
+    "request": {
+      "frame_id": 38,
+      "width": 320,
+      "height": 240,
+      "checksum": 16488100
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": -20.640315086356832,
+        "pos_y_mm": 25.0476333438668,
+        "pos_z_mm": 258.4492178322345,
+        "rot_x_deg": -179.27813068495473,
+        "rot_y_deg": -6.6243386097842825,
+        "rot_z_deg": -89.38022982087699,
+        "scale_percent": 137.9021453857422
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:38:16.811628",
+    "frame_id": 39,
+    "request": {
+      "frame_id": 39,
+      "width": 320,
+      "height": 240,
+      "checksum": 16542108
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": -20.84217422466873,
+        "pos_y_mm": 24.810537488418024,
+        "pos_z_mm": 257.9303338068792,
+        "rot_x_deg": -179.06674474092196,
+        "rot_y_deg": -11.11546947321285,
+        "rot_z_deg": -89.60013416542033,
+        "scale_percent": 137.9021453857422
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:38:26.374814",
+    "frame_id": 40,
+    "request": {
+      "frame_id": 40,
+      "width": 320,
+      "height": 240,
+      "checksum": 16977442
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": 7.880679339021774,
+        "pos_y_mm": 16.381409191298076,
+        "pos_z_mm": 269.43461991280594,
+        "rot_x_deg": 178.24911794816904,
+        "rot_y_deg": -8.024818453359199,
+        "rot_z_deg": -89.0396227851216,
+        "scale_percent": 131.5294647216797
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:38:27.632071",
+    "frame_id": 41,
+    "request": {
+      "frame_id": 41,
+      "width": 320,
+      "height": 240,
+      "checksum": 17467114
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": -16.72326810629319,
+        "pos_y_mm": -9.552771222464031,
+        "pos_z_mm": 276.3172823454056,
+        "rot_x_deg": -175.97712703122943,
+        "rot_y_deg": -0.17220594973640085,
+        "rot_z_deg": -179.9664216742233,
+        "scale_percent": 127.27922058105469
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:38:33.666498",
+    "frame_id": 42,
+    "request": {
+      "frame_id": 42,
+      "width": 320,
+      "height": 240,
+      "checksum": 15806271
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:38:34.823152",
+    "frame_id": 43,
+    "request": {
+      "frame_id": 43,
+      "width": 320,
+      "height": 240,
+      "checksum": 15628831
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": -16.649805735809277,
+        "pos_y_mm": -9.472614710422288,
+        "pos_z_mm": 271.2602363306351,
+        "rot_x_deg": -173.7246878335243,
+        "rot_y_deg": 0.7160897067842665,
+        "rot_z_deg": -179.38669099427324,
+        "scale_percent": 129.4024658203125
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:38:36.032873",
+    "frame_id": 44,
+    "request": {
+      "frame_id": 44,
+      "width": 320,
+      "height": 240,
+      "checksum": 15765267
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": -17.41345431269523,
+        "pos_y_mm": -9.570042772524394,
+        "pos_z_mm": 271.1341971557596,
+        "rot_x_deg": -174.58285351629635,
+        "rot_y_deg": -1.5975246818447901,
+        "rot_z_deg": -179.75343450966815,
+        "scale_percent": 129.4024658203125
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:38:49.028111",
+    "frame_id": 45,
+    "request": {
+      "frame_id": 45,
+      "width": 320,
+      "height": 240,
+      "checksum": 15752925
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": -17.3809957904067,
+        "pos_y_mm": -9.400445116301782,
+        "pos_z_mm": 270.4146435189948,
+        "rot_x_deg": -174.82829848169945,
+        "rot_y_deg": -1.8973296269037634,
+        "rot_z_deg": -179.90954109549511,
+        "scale_percent": 129.4024658203125
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:38:50.456542",
+    "frame_id": 46,
+    "request": {
+      "frame_id": 46,
+      "width": 320,
+      "height": 240,
+      "checksum": 15800041
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:38:54.810770",
+    "frame_id": 47,
+    "request": {
+      "frame_id": 47,
+      "width": 320,
+      "height": 240,
+      "checksum": 15803108
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:39:00.295098",
+    "frame_id": 48,
+    "request": {
+      "frame_id": 48,
+      "width": 320,
+      "height": 240,
+      "checksum": 15788135
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": -16.841393028944932,
+        "pos_y_mm": -9.400792654259211,
+        "pos_z_mm": 270.4139557696612,
+        "rot_x_deg": -174.81891700080698,
+        "rot_y_deg": -1.9283290241952977,
+        "rot_z_deg": -179.90570889761244,
+        "scale_percent": 129.4024658203125
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:39:02.560079",
+    "frame_id": 49,
+    "request": {
+      "frame_id": 49,
+      "width": 320,
+      "height": 240,
+      "checksum": 15809897
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": 28.17388645699364,
+        "pos_y_mm": -15.85237972852371,
+        "pos_z_mm": 271.7736238871953,
+        "rot_x_deg": -177.77888289805404,
+        "rot_y_deg": -2.2420592492745626,
+        "rot_z_deg": -179.55253890057003,
+        "scale_percent": 129.4024658203125
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:39:03.668437",
+    "frame_id": 50,
+    "request": {
+      "frame_id": 50,
+      "width": 320,
+      "height": 240,
+      "checksum": 15815617
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:39:07.918956",
+    "frame_id": 51,
+    "request": {
+      "frame_id": 51,
+      "width": 320,
+      "height": 240,
+      "checksum": 15834419
+    },
+    "response": {
+      "marker_found": true,
+      "marker_id": 42,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": {
+        "pos_x_mm": -16.841393028944932,
+        "pos_y_mm": -9.400792654259211,
+        "pos_z_mm": 270.4139557696612,
+        "rot_x_deg": -174.81891700080698,
+        "rot_y_deg": -1.9283290241952977,
+        "rot_z_deg": -179.90570889761244,
+        "scale_percent": 129.4024658203125
+      }
+    }
+  },
+  {
+    "timestamp": "2025-12-07T19:39:10.869663",
+    "frame_id": 52,
+    "request": {
+      "frame_id": 52,
+      "width": 320,
+      "height": 240,
+      "checksum": 15849112
+    },
+    "response": {
+      "marker_found": false,
+      "marker_id": 0,
+      "pose_valid": false,
+      "unlock_ready": 0,
+      "pose_data": null
+    }
+  }
+]
