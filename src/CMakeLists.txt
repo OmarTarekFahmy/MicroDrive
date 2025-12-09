@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.13)
 set(PICO_BOARD pico_w)
 
 # Import Pico SDK (from environment variable)
-include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+include(${PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 
 project(pico_projects C CXX ASM)
 
@@ -18,7 +18,6 @@ add_executable(servo_test
     main.c
     drivers/servo/servo.c
     drivers/Gyro/mpu6050.c
-    drivers/mpu6050/MPU6050.c
     drivers/lcd/lcd_i2c.c
     drivers/touch/touch_sensor.c
     drivers/buzzer/buzzer.c
@@ -29,7 +28,6 @@ target_include_directories(servo_test PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
     ${CMAKE_CURRENT_LIST_DIR}/drivers/servo
     ${CMAKE_CURRENT_LIST_DIR}/drivers/Gyro
-    ${CMAKE_CURRENT_LIST_DIR}/drivers/mpu6050
     ${CMAKE_CURRENT_LIST_DIR}/drivers/lcd
     ${CMAKE_CURRENT_LIST_DIR}/drivers/touch
     ${CMAKE_CURRENT_LIST_DIR}/drivers/buzzer
@@ -43,7 +41,7 @@ target_link_libraries(servo_test
 )
 
 # Enable UART stdio for debugging
-pico_enable_stdio_usb(servo_test 0)
+pico_enable_stdio_usb(servo_test 1)
 pico_enable_stdio_uart(servo_test 1)
 
 # Create UF2 and map binaries
@@ -78,7 +76,7 @@ target_link_libraries(wifi_camera
     hardware_dma
 )
 
-# Enable UART stdio for debugging; disable USB stdio
+# Enable UART stdio for debugging only (disable USB to avoid TinyUSB conflicts)
 pico_enable_stdio_usb(wifi_camera 0)
 pico_enable_stdio_uart(wifi_camera 1)
 
