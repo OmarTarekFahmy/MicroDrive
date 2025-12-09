@@ -160,29 +160,28 @@ void mpu6050_update(void)
     float dt = absolute_time_diff_us(last_time, now) / 1e6f;
     last_time = now;
 
-    // On first update or after long delay, just initialize angles from accelerometer
-    if (first_update || dt > MAX_DT)
-    {
-        // Initialize roll and pitch from accelerometer only
-        roll = atan2f(ay, az) * 57.29578f;
-        pitch = atan2f(-ax, sqrtf(ay * ay + az * az)) * 57.29578f;
-        yaw = 0.0f;
-        first_update = false;
-        return;
-    }
-
     // ACCELEROMETER → TILT ANGLES
     // Roll: rotation around X axis (tilting left/right)
     float acc_roll = atan2f(ay, az) * 57.29578f;
-    // Pitch: rotation around Y axis (tilting forward/backward)
-    float acc_pitch = atan2f(-ax, sqrtf(ay * ay + az * az)) * 57.29578f;
+    // Pitch: rotation around Y axis (tilting forward/backward) - negated so up is positive
+    float acc_pitch = -atan2f(-ax, sqrtf(ay * ay + az * az)) * 57.29578f;
 
-    // GYRO INTEGRATION
+    // On first update or after long delay, initialize from accelerometer
+    if (first_update || dt > MAX_DT)
+    {
+        roll = acc_roll;
+        pitch = acc_pitch;
+        // Don't reset yaw, keep integrating from current value
+        first_update = false;
+        dt = 0.0f; // Skip gyro integration this cycle
+    }
+
+    // GYRO INTEGRATION (always runs, even after first_update init)
     // MPU6050 gyro axes: gx = rotation rate around X, gy = around Y, gz = around Z
     // Match gyro integration to the same axis definitions as accelerometer
     float roll_gyro = roll + gx * dt;   // gx rotates around X axis = roll
-    float pitch_gyro = pitch + gy * dt; // gy rotates around Y axis = pitch
-    float yaw_gyro = yaw + gz * dt;     // gz rotates around Z axis = yaw
+    float pitch_gyro = pitch - gy * dt; // gy rotates around Y axis = pitch (negated)
+    yaw += gz * dt;                     // gz rotates around Z axis = yaw
 
     // COMPLEMENTARY FILTER
     // Trust gyro for fast changes, accelerometer for long-term stability
@@ -190,7 +189,7 @@ void mpu6050_update(void)
 
     roll = alpha * roll_gyro + (1.0f - alpha) * acc_roll;
     pitch = alpha * pitch_gyro + (1.0f - alpha) * acc_pitch;
-    yaw = yaw_gyro; // Yaw has no accelerometer correction (would need magnetometer)
+    // Yaw has no accelerometer correction (would need magnetometer) - already integrated above
 }
 
 void mpu6050_set_reference(void)
