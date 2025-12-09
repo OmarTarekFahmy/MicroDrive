@@ -89,6 +89,7 @@ pico_add_extra_outputs(wifi_camera)
 add_executable(wifi_camera_simple
     main_wifi_camera_simple.c
     drivers/camera/ov7670.c
+    drivers/dc_motor/dc_motor.c
 )
 
 # Generate PIO header for image capture
@@ -133,6 +134,31 @@ pico_enable_stdio_usb(test_serial 1)
 pico_enable_stdio_uart(test_serial 0)
 
 pico_add_extra_outputs(test_serial)
+
+#--------------------------------------------------------------------
+# DC Motor Test
+#--------------------------------------------------------------------
+add_executable(test_dc_motor
+    test_dc_motor.c
+    drivers/dc_motor/dc_motor.c    
+
+)
+
+target_include_directories(test_dc_motor PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/drivers/dc_motor   
+)
+
+target_link_libraries(test_dc_motor
+    pico_stdlib
+    hardware_pwm
+    hardware_clocks     
+)
+
+pico_enable_stdio_usb(test_dc_motor 1)
+pico_enable_stdio_uart(test_dc_motor 0)
+
+pico_add_extra_outputs(test_dc_motor)
 
 #--------------------------------------------------------------------
 # WiFi Simple Test (WiFi connection test without camera)
