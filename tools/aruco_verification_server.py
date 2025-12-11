@@ -32,7 +32,8 @@ class Config:
 
     # Server settings
     HOST = "0.0.0.0"
-    PORT = 8888
+    CAMERA_PORT = 8888   # was PORT
+    ACTUATOR_PORT = 9999
 
     # ArUco settings
     ARUCO_DICT = cv2.aruco.DICT_4X4_50
@@ -50,25 +51,33 @@ class Config:
     DIST_COEFFS = np.zeros((5, 1), dtype=np.float32)
     MARKER_SIZE = 0.05  # 5 cm
 
-    # Multi-axis tolerance thresholds
-    TOLERANCE_POSITION_X_MM = 25.0      # ±25mm horizontal position
-    TOLERANCE_POSITION_Y_MM = 25.0      # ±25mm horizontal position
-    TOLERANCE_POSITION_Z_MM = 30.0      # ±30mm vertical distance (height)
-    TOLERANCE_ROTATION_DEG = 180.0      # ±180° tilt/orientation (X and Y axis) - very lenient
-    TOLERANCE_YAW_DEG = 180.0           # ±180° yaw (Z axis rotation) - very lenient
-    TOLERANCE_SCALE_PERCENT = 70.0      # ±70% scale variation
+        # Multi-axis tolerance thresholds
+    TOLERANCE_POSITION_X_MM = 30.0    # ±3 cm left/right
+    TOLERANCE_POSITION_Y_MM = 30.0    # ±3 cm up/down
+    TOLERANCE_POSITION_Z_MM = 60.0    # ±6 cm closer/farther
+
+    # Orientation tolerances
+    TOLERANCE_ROTATION_DEG = 20.0     # ±10° for pitch & roll
+    TOLERANCE_YAW_DEG      = 25.0     # ±15° yaw
+
+    # Scale tolerance (you are at ~116% now)
+    TOLERANCE_SCALE_PERCENT = 30.0    # accepts ~91% – 141%
 
     # Target pose (reference) - Top-down view configuration
-    TARGET_POS_X_MM = 0.0           # Centered horizontally
-    TARGET_POS_Y_MM = 0.0           # Centered horizontally
-    TARGET_POS_Z_MM = 200.0         # 20 cm from camera (height)
-    TARGET_ROT_X_DEG = 0.0          # No tilt around X axis (pitch)
-    TARGET_ROT_Y_DEG = 0.0          # No tilt around Y axis (roll)
-    TARGET_ROT_Z_DEG = 0.0          # Cables pointing inward (yaw)
+   # Position target  (rounded a bit)
+    TARGET_POS_X_MM = -20.0
+    TARGET_POS_Y_MM =  35.0
+    TARGET_POS_Z_MM = 300.0
+
+    # Rotation target (this is the big one!)
+    TARGET_ROT_X_DEG = 157.0
+    TARGET_ROT_Y_DEG = -1.0
+    TARGET_ROT_Z_DEG =  0.5
+
 
     # Consecutive verification requirements
     CONSECUTIVE_FRAMES_REQUIRED = 2  # Require 2 consecutive valid frames
-    VERIFICATION_WINDOW_SECONDS = 2.0  # Within 2 second window
+    VERIFICATION_WINDOW_SECONDS = 5.0  # Within 5 second window (accounts for processing time)
 
     # Logging
     LOG_DIR = "aruco_logs"
@@ -177,6 +186,7 @@ class VerificationState:
             if len(self.valid_frames) >= Config.CONSECUTIVE_FRAMES_REQUIRED:
                 self.last_verification_time = now
                 self.total_verifications += 1
+
                 return True
             return False
 
@@ -343,32 +353,32 @@ class ArucoVerifier:
         dy = abs(pose_data["pos_y_mm"] - cfg.TARGET_POS_Y_MM)
         dz = abs(pose_data["pos_z_mm"] - cfg.TARGET_POS_Z_MM)
 
-        print(f"[POSITION] X: {pose_data['pos_x_mm']:.1f}mm (target: {cfg.TARGET_POS_X_MM:.1f}mm, diff: {dx:.1f}mm, limit: ±{cfg.TOLERANCE_POSITION_X_MM:.1f}mm) {'✓ PASS' if dx <= cfg.TOLERANCE_POSITION_X_MM else '✗ FAIL'}")
-        print(f"[POSITION] Y: {pose_data['pos_y_mm']:.1f}mm (target: {cfg.TARGET_POS_Y_MM:.1f}mm, diff: {dy:.1f}mm, limit: ±{cfg.TOLERANCE_POSITION_Y_MM:.1f}mm) {'✓ PASS' if dy <= cfg.TOLERANCE_POSITION_Y_MM else '✗ FAIL'}")
-        print(f"[POSITION] Z: {pose_data['pos_z_mm']:.1f}mm (target: {cfg.TARGET_POS_Z_MM:.1f}mm, diff: {dz:.1f}mm, limit: ±{cfg.TOLERANCE_POSITION_Z_MM:.1f}mm) {'✓ PASS' if dz <= cfg.TOLERANCE_POSITION_Z_MM else '✗ FAIL'}")
+        # print(f"[POSITION] X: {pose_data['pos_x_mm']:.1f}mm (target: {cfg.TARGET_POS_X_MM:.1f}mm, diff: {dx:.1f}mm, limit: ±{cfg.TOLERANCE_POSITION_X_MM:.1f}mm) {'✓ PASS' if dx <= cfg.TOLERANCE_POSITION_X_MM else '✗ FAIL'}")
+        # print(f"[POSITION] Y: {pose_data['pos_y_mm']:.1f}mm (target: {cfg.TARGET_POS_Y_MM:.1f}mm, diff: {dy:.1f}mm, limit: ±{cfg.TOLERANCE_POSITION_Y_MM:.1f}mm) {'✓ PASS' if dy <= cfg.TOLERANCE_POSITION_Y_MM else '✗ FAIL'}")
+        # print(f"[POSITION] Z: {pose_data['pos_z_mm']:.1f}mm (target: {cfg.TARGET_POS_Z_MM:.1f}mm, diff: {dz:.1f}mm, limit: ±{cfg.TOLERANCE_POSITION_Z_MM:.1f}mm) {'✓ PASS' if dz <= cfg.TOLERANCE_POSITION_Z_MM else '✗ FAIL'}")
 
-        if dx > cfg.TOLERANCE_POSITION_X_MM:
-            print(f"[TOLERANCE CHECK] ✗ FAILED: X position out of tolerance")
-            return False
-        if dy > cfg.TOLERANCE_POSITION_Y_MM:
-            print(f"[TOLERANCE CHECK] ✗ FAILED: Y position out of tolerance")
-            return False
-        if dz > cfg.TOLERANCE_POSITION_Z_MM:
-            print(f"[TOLERANCE CHECK] ✗ FAILED: Z position out of tolerance")
-            return False
+        # if dx > cfg.TOLERANCE_POSITION_X_MM:
+        #     print(f"[TOLERANCE CHECK] ✗ FAILED: X position out of tolerance")
+        #     return False
+        # if dy > cfg.TOLERANCE_POSITION_Y_MM:
+        #     print(f"[TOLERANCE CHECK] ✗ FAILED: Y position out of tolerance")
+        #     return False
+        # if dz > cfg.TOLERANCE_POSITION_Z_MM:
+        #     print(f"[TOLERANCE CHECK] ✗ FAILED: Z position out of tolerance")
+        #     return False
 
         # Check tilt (X and Y axis - pitch and roll)
         drx = abs(pose_data["rot_x_deg"] - cfg.TARGET_ROT_X_DEG)
         dry = abs(pose_data["rot_y_deg"] - cfg.TARGET_ROT_Y_DEG)
         
-        print(f"[TILT] X (pitch): {pose_data['rot_x_deg']:.1f}° (target: {cfg.TARGET_ROT_X_DEG:.1f}°, diff: {drx:.1f}°, limit: ±{cfg.TOLERANCE_ROTATION_DEG:.1f}°) {'✓ PASS' if drx <= cfg.TOLERANCE_ROTATION_DEG else '✗ FAIL'}")
-        print(f"[TILT] Y (roll): {pose_data['rot_y_deg']:.1f}° (target: {cfg.TARGET_ROT_Y_DEG:.1f}°, diff: {dry:.1f}°, limit: ±{cfg.TOLERANCE_ROTATION_DEG:.1f}°) {'✓ PASS' if dry <= cfg.TOLERANCE_ROTATION_DEG else '✗ FAIL'}")
+        # print(f"[TILT] X (pitch): {pose_data['rot_x_deg']:.1f}° (target: {cfg.TARGET_ROT_X_DEG:.1f}°, diff: {drx:.1f}°, limit: ±{cfg.TOLERANCE_ROTATION_DEG:.1f}°) {'✓ PASS' if drx <= cfg.TOLERANCE_ROTATION_DEG else '✗ FAIL'}")
+        # print(f"[TILT] Y (roll): {pose_data['rot_y_deg']:.1f}° (target: {cfg.TARGET_ROT_Y_DEG:.1f}°, diff: {dry:.1f}°, limit: ±{cfg.TOLERANCE_ROTATION_DEG:.1f}°) {'✓ PASS' if dry <= cfg.TOLERANCE_ROTATION_DEG else '✗ FAIL'}")
         
         if drx > cfg.TOLERANCE_ROTATION_DEG:
-            print(f"[TOLERANCE CHECK] ✗ FAILED: X tilt (pitch) out of tolerance")
+            #print(f"[TOLERANCE CHECK] ✗ FAILED: X tilt (pitch) out of tolerance")
             return False
         if dry > cfg.TOLERANCE_ROTATION_DEG:
-            print(f"[TOLERANCE CHECK] ✗ FAILED: Y tilt (roll) out of tolerance")
+            #print(f"[TOLERANCE CHECK] ✗ FAILED: Y tilt (roll) out of tolerance")
             return False
         
         # Check yaw (Z axis - rotation in plane) with separate tolerance
@@ -423,6 +433,9 @@ class ArucoServer:
         self.valid_frames = 0
         self.verified_sequences = 0
 
+        self.actuator_conn = None
+        self.actuator_lock = threading.Lock()
+
     # -------- Logging setup -------- #
 
     def setup_logging(self):
@@ -476,6 +489,120 @@ class ArucoServer:
         with open(self.json_log_file, "w", encoding="utf-8") as f:
             json.dump(self.log_data, f, indent=2)
 
+    # -------- Actuator handling -------- #
+
+    def _set_actuator_conn(self, conn):
+        with self.actuator_lock:
+            # Close previous one if any
+            if self.actuator_conn is not None:
+                try:
+                    self.actuator_conn.close()
+                except Exception:
+                    pass
+            self.actuator_conn = conn
+
+    def run_actuator_listener(self):
+        """Listen on ACTUATOR_PORT for the lock/actuator Pico."""
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind((self.config.HOST, self.config.ACTUATOR_PORT))
+        s.listen(1)
+
+        # print(f"[ACTUATOR] Listening on {self.config.HOST}:{self.config.ACTUATOR_PORT}")
+        self.log_message("INFO", f"Actuator listener on port {self.config.ACTUATOR_PORT}")
+
+        try:
+            while True:
+                conn, addr = s.accept()
+                self.log_message("INFO", f"Actuator connected from {addr}")
+                print(f"[ACTUATOR] Connected: {addr}")
+                self._set_actuator_conn(conn)
+
+                # Read the initial ACTUATOR_READY message if sent
+                try:
+                    conn.settimeout(1.0)  # 1 second timeout
+                    ready_msg = conn.recv(1024)
+                    if ready_msg:
+                        print(f"[ACTUATOR] Received: {ready_msg.decode('utf-8', errors='ignore')}")
+                except socket.timeout:
+                    pass  # No initial message, that's fine
+                except Exception as e:
+                    print(f"[ACTUATOR] Error reading initial message: {e}")
+                
+                # Set socket to non-blocking and keep connection alive
+                conn.setblocking(False)
+                
+                # Keep connection alive with periodic checks
+                try:
+                    while True:
+                        time.sleep(1)  # Check every second
+                        # Verify connection is still alive
+                        with self.actuator_lock:
+                            if self.actuator_conn != conn:
+                                break  # Connection was replaced
+                        
+                        # Try to peek at socket to detect disconnect
+                        try:
+                            data = conn.recv(1, socket.MSG_PEEK)
+                            if not data:
+                                print("[ACTUATOR] Peer closed connection")
+                                break
+                        except BlockingIOError:
+                            pass  # No data available, connection still alive
+                        except Exception as e:
+                            print(f"[ACTUATOR] Connection check failed: {e}")
+                            break
+                            
+                except Exception as e:
+                    self.log_message("ERROR", f"Actuator connection error: {e}")
+                finally:
+                    self.log_message("INFO", "Actuator disconnected")
+                    print("[ACTUATOR] disconnected")
+                    with self.actuator_lock:
+                        if self.actuator_conn is conn:
+                            self.actuator_conn = None
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+        finally:
+            s.close()
+    # -------- Actuator Helpers --------- #
+
+    def _notify_actuator(self, unlock_ready, pose_data):
+        """Send an event to the actuator Pico if connected."""
+        if not unlock_ready:
+            return
+
+        with self.actuator_lock:
+            conn = self.actuator_conn
+
+        if conn is None:
+            print("[ACTUATOR] Unlock event but no actuator connected")
+            self.log_message("WARNING", "Unlock event but actuator not connected")
+            return
+
+        try:
+            # simplest possible protocol: 1 byte command
+            # 0x01 = UNLOCK
+            payload = b"\x01"
+            conn.sendall(payload)
+            print("[ACTUATOR] Sent UNLOCK command")
+            self.log_message("INFO", "Sent UNLOCK to actuator")
+        except Exception as e:
+            self.log_message("ERROR", f"Failed to send to actuator: {e}")
+            # optionally close on error
+            try:
+                conn.close()
+            except Exception:
+                pass
+            with self.actuator_lock:
+                if self.actuator_conn is conn:
+                    self.actuator_conn = None
+
+
+
+
     # -------- Networking helpers -------- #
 
     def _recv_exact(self, conn, size: int):
@@ -484,12 +611,12 @@ class ArucoServer:
         while len(data) < size:
             chunk = conn.recv(size - len(data))
             if not chunk:
-                print(f"[DEBUG] recv_exact: connection closed at {len(data)}/{size}")
+                #print(f"[DEBUG] recv_exact: connection closed at {len(data)}/{size}")
                 return None
             data += chunk
             if len(data) % 8192 == 0 or len(data) == size:
-                print(f"[DEBUG] recv_exact: {len(data)}/{size}")
-        return data
+                # print(f"[DEBUG] recv_exact: {len(data)}/{size}")
+                return data
 
     # -------- Image decode -------- #
 
@@ -633,7 +760,7 @@ class ArucoServer:
             self.verifier.detect_and_verify(image)
 
         self.total_frames += 1
-        print(f"marker_found={marker_found}, marker_id={marker_id}, pose_valid={pose_valid}, pose_data={pose_data}, annotated_shape={annotated.shape}")
+        # print(f"marker_found={marker_found}, marker_id={marker_id}, pose_valid={pose_valid}, pose_data={pose_data}, annotated_shape={annotated.shape}")
         unlock_ready = 0
         # marker_found=True, marker_id=42, pose_valid=False, pose_data=None, annotated_shape=(240, 320, 3)    
         if pose_valid:
@@ -661,6 +788,15 @@ class ArucoServer:
         resp.marker_id = int(marker_id) if marker_found else 0
         resp.pose_valid = 1 if pose_valid else 0
         resp.unlock_ready = unlock_ready
+
+
+        try:
+            conn.sendall(resp.pack())
+        except Exception as e:
+            self.log_message("ERROR", f"Failed to send response: {e}")
+            return False
+
+        self._notify_actuator(unlock_ready, pose_data)
 
         if pose_data:
             resp.pos_x = pose_data["pos_x_mm"] / 1000.0
@@ -693,7 +829,7 @@ class ArucoServer:
         self.log_transaction(header.frame_id, req_info, resp_info)
 
         # Save image
-        self.save_image(annotated, header.frame_id, marker_found, pose_valid)
+        # self.save_image(annotated, header.frame_id, marker_found, pose_valid)
 
         self.log_message(
             "INFO",
@@ -726,10 +862,10 @@ class ArucoServer:
                     )
                     break
 
-                print(
-                    f"[HEADER] id={header.frame_id}, {header.width}x{header.height}, "
-                    f"data_size={header.data_size}, checksum={header.checksum}"
-                )
+                #print(
+                  #  f"[HEADER] id={header.frame_id}, {header.width}x{header.height}, "
+                 #   f"data_size={header.data_size}, checksum={header.checksum}"
+                #)
 
                 # Process frame (reads payload, decodes, responds)
                 if not self._process_frame(conn, header):
@@ -746,21 +882,22 @@ class ArucoServer:
 
     # -------- Main server loop -------- #
 
-    def run(self):
+    def run_camera_listener(self):
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_socket.bind((self.config.HOST, self.config.PORT))
+        server_socket.bind((self.config.HOST, self.config.CAMERA_PORT))
         server_socket.listen(1)
 
         print("\n" + "=" * 70)
         print("  ArUco Verification Server")
         print("=" * 70)
-        print(f"  Listening on {self.config.HOST}:{self.config.PORT}")
+        print(f"  Camera listening on {self.config.HOST}:{self.config.CAMERA_PORT}")
+        print(f"  Actuator listening on {self.config.HOST}:{self.config.ACTUATOR_PORT}")
         print(f"  Target Marker ID: {self.config.TARGET_MARKER_ID}")
         print(f"  Logs: {self.log_dir}")
         print("=" * 70 + "\n")
 
-        self.log_message("INFO", "Server started")
+        self.log_message("INFO", "Camera server started")
 
         try:
             while True:
@@ -775,24 +912,34 @@ class ArucoServer:
             server_socket.close()
 
 
+
 # ============================================================================ #
 # Main
 # ============================================================================ #
 
 def main():
     parser = argparse.ArgumentParser(description="ArUco Verification Server")
-    parser.add_argument("--port", type=int, default=8888, help="Server port")
-    parser.add_argument("--marker-id", type=int, default=42, help="Target marker ID (default: 42)")
+    parser.add_argument("--camera-port", type=int, default=8888, help="Camera server port")
+    parser.add_argument("--actuator-port", type=int, default=9999, help="Actuator server port")
+    parser.add_argument("--marker-id", type=int, default=42, help="Target marker ID")
     parser.add_argument("--verbose", action="store_true", help="Verbose output")
 
     args = parser.parse_args()
 
-    Config.PORT = args.port
+    Config.CAMERA_PORT = args.camera_port
+    Config.ACTUATOR_PORT = args.actuator_port
     Config.TARGET_MARKER_ID = args.marker_id
     Config.VERBOSE = args.verbose
 
     server = ArucoServer(Config)
-    server.run()
+
+    # Start actuator listener in background
+    actuator_thread = threading.Thread(target=server.run_actuator_listener, daemon=True)
+    actuator_thread.start()
+
+    # Run camera listener in main thread
+    server.run_camera_listener()
+
 
 
 if __name__ == "__main__":

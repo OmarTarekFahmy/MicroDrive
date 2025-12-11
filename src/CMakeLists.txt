@@ -237,3 +237,24 @@ pico_add_extra_outputs(test_network_only)
 
 # # Create UF2 and map binaries
 # pico_add_extra_outputs(usb_camera)
+#--------------------------------------------------------------------
+# MicroDrive Actuator Client (Receives unlock commands from server)
+#--------------------------------------------------------------------
+add_executable(microdrive_actuator
+    main_actuator.c
+)
+
+target_include_directories(microdrive_actuator PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}
+)
+
+target_link_libraries(microdrive_actuator
+    pico_stdlib
+    pico_cyw43_arch_lwip_poll
+)
+
+pico_enable_stdio_usb(microdrive_actuator 1)
+pico_enable_stdio_uart(microdrive_actuator 0)
+
+pico_add_extra_outputs(microdrive_actuator)
+
