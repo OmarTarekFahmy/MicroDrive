@@ -5,6 +5,7 @@
 #include "drivers/servo_test/servo_test.h"
 #include "drivers/touch/touch_sensor.h"
 #include "drivers/buzzer/buzzer.h"
+#include "drivers/rgb_led/rgb_led.h"
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
@@ -50,6 +51,11 @@
 #define LED_RED_PIN 18
 #define LED_GREEN_PIN 19
 
+// RGB LED pins
+#define RGB_RED_PIN 21
+#define RGB_GREEN_PIN 22
+#define RGB_BLUE_PIN 26
+
 // Lock sequence configuration
 #define SEQUENCE_LENGTH 4
 #define LOCK_OPEN_TIME_MS 5000 // Lock stays open for 5 seconds
@@ -62,12 +68,15 @@ static int8_t entered_sequence[SEQUENCE_LENGTH];
 static uint8_t sequence_index = 0;
 static bool system_unlocked = false; // Track if system has been unlocked
 
+// RGB LED instance
+static RGB_LED rgb_led;
+
 #define UPDATE_INTERVAL_MS 200
 
 // WiFi credentials - SAME AS CAMERA
 #define WIFI_SSID "277353"
 #define WIFI_PASSWORD "2004ahmed"
-#define SERVER_IP "172.20.10.3"
+#define SERVER_IP "172.20.10.4"
 #define ACTUATOR_PORT 9999
 
 // Command from server
@@ -246,6 +255,18 @@ void leds_unlocked(void)
     gpio_put(LED_GREEN_PIN, 1);
 }
 
+// Flash RGB LED blue rapidly (for final alignment indication)
+void rgb_led_flash_blue(int times, int delay_ms)
+{
+    for (int i = 0; i < times; i++)
+    {
+        rgb_led_preset_color(&rgb_led, COLOR_BLUE);
+        sleep_ms(delay_ms);
+        rgb_led_off(&rgb_led);
+        sleep_ms(delay_ms);
+    }
+}
+
 // Check sequence and return true if correct
 bool check_sequence(void)
 {
@@ -294,7 +315,7 @@ int main()
 
 
     // Initialize WiFi - SAME AS CAMERA
-    /* printf("[WiFi] Initializing...\n");
+    printf("[WiFi] Initializing...\n");
     if (cyw43_arch_init()) {
         printf("[ERROR] WiFi init failed\n");
         return -1;
@@ -313,7 +334,7 @@ int main()
         return -1;
     }
     printf("[WiFi] Connected!\n");
- */
+
     // Connect to actua
     // Give USB time to enumerate properly (critical for reliable connection)
     sleep_ms(3000);
@@ -326,12 +347,12 @@ int main()
     printf("Build: %s %s\n", __DATE__, __TIME__);
     printf("System initializing...\n\n");
 
-    /* printf("[TCP] Connecting to %s:%d...\n", SERVER_IP, ACTUATOR_PORT);
+    printf("[TCP] Connecting to %s:%d...\n", SERVER_IP, ACTUATOR_PORT);
     if (!connect_to_server(SERVER_IP, ACTUATOR_PORT)) {
         printf("[ERROR] Server connection failed\n");
         cyw43_arch_deinit();
         return -1;
-    } */
+    }
 
 
     // Initialize LCD first (keep it blank initially)
@@ -356,6 +377,12 @@ int main()
     electromagnet_init();
     printf("Lock: GPIO %d\n", LOCK_PIN);
     printf("Secret sequence: Touch 1-3-2-4\n\n");
+
+    // Initialize RGB LED (starts red - inactive/locked)
+    rgb_led_init(&rgb_led, RGB_RED_PIN, RGB_GREEN_PIN, RGB_BLUE_PIN);
+    rgb_led_preset_color(&rgb_led, COLOR_RED);
+    printf("RGB LED: R=GPIO%d, G=GPIO%d, B=GPIO%d (RED=inactive)\n", 
+           RGB_RED_PIN, RGB_GREEN_PIN, RGB_BLUE_PIN);
 
     // Initialize sequence tracking
     memset(entered_sequence, -1, sizeof(entered_sequence));
@@ -409,6 +436,10 @@ int main()
     
     // Switch to green LED (stays green permanently)
     leds_unlocked();
+    
+    // Switch RGB LED to green (system unlocked)
+    rgb_led_preset_color(&rgb_led, COLOR_GREEN);
+    printf("RGB LED: GREEN (unlocked)\n");
 
     // Play success melody
     buzzer_beep(523, 100); // C5
@@ -661,27 +692,40 @@ int main()
 
         loop_count++;
 
-        /* if (connected) {
+        if (connected) {
             cyw43_arch_poll();
             if (unlock_count > 0) {
                 break;
             }
-        } */
+        }
 
         sleep_ms(UPDATE_INTERVAL_MS); // 200ms = 5Hz update rate (smooth servo control)
     }
 
+    // ========== FINAL ALIGNMENT COMPLETE ==========
+    printf("\n=== FINAL ALIGNMENT COMPLETE ===\n");
+    printf("Unlock signal received from other Pico!\n");
+    
+    // Flash RGB LED blue rapidly to indicate alignment completion
+    printf("RGB LED: BLUE FLASHING (final alignment)\n");
+    rgb_led_flash_blue(20, 100);  // Flash 20 times, 100ms on/off
+    
+    // Return RGB LED to green after flashing
+    rgb_led_preset_color(&rgb_led, COLOR_GREEN);
 
-    // dc motors code
+    // ========== ACTIVATE DC MOTOR ==========
+    printf("\n=== SPINNING DC MOTOR ===\n");
 
-
-    printf("Forward 100%% for 7.5s\n");
+    printf("DC Motor: Forward 100%% for 7.5s\n");
     dc_motor_set(&motor, 1.0f);
     sleep_ms(7500);
 
-    printf("Reverse 100%% for 7.5s\n");
+    printf("DC Motor: Reverse 100%% for 7.5s\n");
     dc_motor_set(&motor, -1.0f);
     sleep_ms(7500);
+    
+    printf("DC Motor: Stopping\n");
+    dc_motor_set(&motor, 0.0f);
 
     return 0;
 }

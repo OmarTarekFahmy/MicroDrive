@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.13)
 set(PICO_BOARD pico_w)
 
 # Import Pico SDK (from environment variable)
-include(/home/yassin/pico/pico-sdk/external/pico_sdk_import.cmake)
+include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 
 project(pico_projects C CXX ASM)
 
@@ -22,6 +22,7 @@ add_executable(servo_test
     drivers/touch/touch_sensor.c
     drivers/buzzer/buzzer.c
     drivers/dc_motor/dc_motor.c
+    drivers/rgb_led/rgb_led.c
 )
 
 # Include the driver directories
@@ -32,6 +33,7 @@ target_include_directories(servo_test PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/drivers/lcd
     ${CMAKE_CURRENT_LIST_DIR}/drivers/touch
     ${CMAKE_CURRENT_LIST_DIR}/drivers/buzzer
+    ${CMAKE_CURRENT_LIST_DIR}/drivers/rgb_led
 )
 
 # Link required Pico libraries
