@@ -244,6 +244,7 @@ void mpu6050_update(float dt)
     // Note: Gyro gives angular velocity, so angle += rate * time
     roll_angle += gyro_x * dt;
     pitch_angle += gyro_y * dt;
+    printf("Yaw speed: %f\n", gyro_z);
     yaw_angle += gyro_z * dt;    // Yaw drifts since no magnetometer to correct it
     
     // Apply complementary filter for roll and pitch
@@ -252,8 +253,8 @@ void mpu6050_update(float dt)
     pitch_angle = COMPLEMENTARY_ALPHA * pitch_angle + (1.0f - COMPLEMENTARY_ALPHA) * accel_pitch;
     
     // Normalize yaw to -180 to +180 range
-    while (yaw_angle > 180.0f) yaw_angle -= 360.0f;
-    while (yaw_angle < -180.0f) yaw_angle += 360.0f;
+    while (yaw_angle > 180.0f) yaw_angle = 180.0f;
+    while (yaw_angle < -180.0f) yaw_angle = -180.0f;
 }
 
 void mpu6050_get_orientation(MPU6050_Orientation *orientation)

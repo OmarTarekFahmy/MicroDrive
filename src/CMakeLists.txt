@@ -21,6 +21,7 @@ add_executable(servo_test
     drivers/lcd/lcd_i2c.c
     drivers/touch/touch_sensor.c
     drivers/buzzer/buzzer.c
+    drivers/dc_motor/dc_motor.c
 )
 
 # Include the driver directories
@@ -38,6 +39,7 @@ target_link_libraries(servo_test
     pico_stdlib
     hardware_pwm
     hardware_i2c
+    pico_cyw43_arch_lwip_poll
 )
 
 # Enable UART stdio for debugging
