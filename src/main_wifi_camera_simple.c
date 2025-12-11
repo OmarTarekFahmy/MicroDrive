@@ -22,7 +22,7 @@
 // WiFi credentials
 #define WIFI_SSID "277353"
 #define WIFI_PASSWORD "2004ahmed"
-#define SERVER_IP "172.20.10.3"
+#define SERVER_IP "172.20.10.4"
 #define SERVER_PORT 8888
 
 // Frame buffer - same as USB camera
