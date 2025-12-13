@@ -20,9 +20,9 @@
 #define FRAME_HEIGHT 240
 
 // WiFi credentials
-#define WIFI_SSID "277353"
-#define WIFI_PASSWORD "2004ahmed"
-#define SERVER_IP "172.20.10.4"
+#define WIFI_SSID "youssef's Galaxy S21 Ultra 5G"
+#define WIFI_PASSWORD "Ctiger@YM123"
+#define SERVER_IP "10.79.87.200"
 #define SERVER_PORT 8888
 
 // Frame buffer - same as USB camera

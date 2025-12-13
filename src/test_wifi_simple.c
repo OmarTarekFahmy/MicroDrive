@@ -14,11 +14,11 @@
 #include "lwip/dns.h"
 
 // WiFi credentials
-#define WIFI_SSID       "2004ahmed"
-#define WIFI_PASSWORD   "2004ahmed"    // CORRECTED PASSWORD
+#define WIFI_SSID       "youssef's Galaxy S21 Ultra 5G"
+#define WIFI_PASSWORD   "Ctiger@YM123"    // CORRECTED PASSWORD
 
 // Server settings
-#define SERVER_IP       "172.20.10.3"
+#define SERVER_IP       "10.1.1.170"
 #define SERVER_PORT     8888
 
 int main() {
