@@ -15,9 +15,9 @@
 #include "drivers/dc_motor/dc_motor.h"
 
 // DC Motor (H-bridge) pins
-#define PIN_IN1 18
-#define PIN_IN2 19
-#define PIN_PWM 20
+#define PIN_IN1 4
+#define PIN_IN2 5
+#define PIN_PWM 6
 #define PWM_FREQ_HZ 20000u
 
 // LCD I2C on I2C0 (GPIO 0 = SDA, GPIO 1 = SCL)
@@ -28,12 +28,16 @@
 // Servo GPIO pins - MG996R servos
 #define SERVO_X_PIN 14 // 360° servo for X-axis
 #define SERVO_Y_PIN 15 // 360° servo for Y-axis
-#define SERVO_Z_PIN 16 // 180° servo for Z-axis
+#define SERVO_Z_PIN 18 // 180° servo for Z-axis
 
 // Servo IDs (matches initialization order)
-#define SERVO_X 0  // Continuous servo on GPIO 14
-#define SERVO_Y 1  // Continuous servo on GPIO 15
-#define SERVO_Z 2  // Positional servo on GPIO 16
+#define SERVO_X 0     // Continuous servo on GPIO 14
+#define SERVO_Y 1     // Continuous servo on GPIO 15
+#define SERVO_Z 2     // Positional servo on GPIO 18
+#define SERVO_LOCK 3  // Lock servo on GPIO 20 (continuous)
+
+// Lock servo pin
+#define SERVO_LOCK_PIN 20  // Continuous servo for lock mechanism
 
 // Touch sensor pins (GPIO 9-12)
 #define TOUCH_1_PIN 9
@@ -74,9 +78,9 @@ static RGB_LED rgb_led;
 #define UPDATE_INTERVAL_MS 200
 
 // WiFi credentials - SAME AS CAMERA
-#define WIFI_SSID "277353"
-#define WIFI_PASSWORD "2004ahmed"
-#define SERVER_IP "172.20.10.4"
+#define WIFI_SSID "youssef's Galaxy S21 Ultra 5G"
+#define WIFI_PASSWORD "Ctiger@YM123"
+#define SERVER_IP "10.79.87.200"
 #define ACTUATOR_PORT 9999
 
 // Command from server
@@ -549,14 +553,16 @@ int main()
     servo_test_init(SERVO_X, SERVO_X_PIN);  // X-axis: continuous
     servo_test_init(SERVO_Y, SERVO_Y_PIN);  // Y-axis: continuous
     servo_test_init(SERVO_Z, SERVO_Z_PIN);  // Z-axis: positional
+    servo_test_init(SERVO_LOCK, SERVO_LOCK_PIN);  // Lock servo: continuous
     
-    // Enable continuous mode for X and Y servos (360° servos)
+    // Enable continuous mode for X, Y, and Lock servos (360° servos)
     // Speed: 187.6 dps based on your measurement (3600° in 19.19s)
-    printf("\nEnabling continuous mode for X and Y servos...\n");
+    printf("\nEnabling continuous mode for X, Y, and Lock servos...\n");
     servo_test_set_continuous_mode(SERVO_X, 187.6f);
     servo_test_set_continuous_mode(SERVO_Y, 187.6f);
-    printf("Servos initialized: X=GPIO%d (cont), Y=GPIO%d (cont), Z=GPIO%d (pos)\n\n",
-           SERVO_X_PIN, SERVO_Y_PIN, SERVO_Z_PIN);
+    servo_test_set_continuous_mode(SERVO_LOCK, 187.6f);
+    printf("Servos initialized: X=GPIO%d (cont), Y=GPIO%d (cont), Z=GPIO%d (pos), LOCK=GPIO%d (cont)\n\n",
+           SERVO_X_PIN, SERVO_Y_PIN, SERVO_Z_PIN, SERVO_LOCK_PIN);
     
     last_touched = -1;
 
@@ -706,26 +712,70 @@ int main()
     printf("\n=== FINAL ALIGNMENT COMPLETE ===\n");
     printf("Unlock signal received from other Pico!\n");
     
+    // Display "Target Locked" message on LCD
+    lcd_i2c_clear();
+    lcd_i2c_set_cursor(0, 0);
+    lcd_i2c_print("Target Locked:");
+    lcd_i2c_set_cursor(1, 0);
+    lcd_i2c_print("Initiating Key");
+    sleep_ms(1500);
+    lcd_i2c_clear();
+    lcd_i2c_set_cursor(0, 0);
+    lcd_i2c_print("Key Sequence");
+    lcd_i2c_set_cursor(1, 0);
+    lcd_i2c_print("Activated...");
+    
     // Flash RGB LED blue rapidly to indicate alignment completion
     printf("RGB LED: BLUE FLASHING (final alignment)\n");
-    rgb_led_flash_blue(20, 100);  // Flash 20 times, 100ms on/off
+    rgb_led_flash_blue(10, 100);  // Flash 10 times, 100ms on/off
     
-    // Return RGB LED to green after flashing
-    rgb_led_preset_color(&rgb_led, COLOR_GREEN);
+    // Keep RGB LED blue during key sequence
+    rgb_led_preset_color(&rgb_led, COLOR_BLUE);
 
-    // ========== ACTIVATE DC MOTOR ==========
-    printf("\n=== SPINNING DC MOTOR ===\n");
+    // ========== ACTIVATE DC MOTOR KEY SEQUENCE ==========
+    printf("\n=== EXECUTING KEY SEQUENCE ===\n");
 
-    printf("DC Motor: Forward 100%% for 7.5s\n");
-    dc_motor_set(&motor, 1.0f);
-    sleep_ms(7500);
-
-    printf("DC Motor: Reverse 100%% for 7.5s\n");
-    dc_motor_set(&motor, -1.0f);
-    sleep_ms(7500);
+    // Step 1: Clockwise rotation at MAXIMUM speed (100% PWM) for 1.5 seconds
+    printf("DC Motor: Clockwise MAX SPEED (100%% PWM) for 1.5s\n");
+    dc_motor_set(&motor, 1.0f);  // 1.0 = 100% = full speed clockwise
+    sleep_ms(1500);
     
+    // Step 2: Stop and wait 0.5 seconds
+    printf("DC Motor: Stopping, waiting 0.5s\n");
+    dc_motor_set(&motor, 0.0f);
+    sleep_ms(500);
+    
+    // Step 3: Counter-clockwise rotation at HALF speed (50% PWM) for 2.5 seconds
+    printf("DC Motor: Counter-Clockwise HALF SPEED (50%% PWM) for 2.5s\n");
+    dc_motor_set(&motor, -0.5f);  // -0.5 = -50% for better torque (was too weak at -0.5)
+    sleep_ms(2500);
+    
+    // Step 4: Stop motor
     printf("DC Motor: Stopping\n");
     dc_motor_set(&motor, 0.0f);
+    
+    // Step 5: Rotate lock servo 135 degrees
+    printf("\n=== ROTATING LOCK SERVO ===\n");
+    printf("Lock Servo: Rotating 135 degrees...\n");
+    servo_test_move_continuous_angle(SERVO_LOCK, 45.0f);
+    printf("Lock Servo: Rotation complete\n");
+    
+    // Step 6: Unlock electromagnet (turn OFF to release)
+    printf("\n=== UNLOCKING ELECTROMAGNET ===\n");
+    electromagnet_close();  // GPIO 17 = LOW = Magnet OFF = Lock OPEN
+    printf("Electromagnet: OFF (lock released)\n");
+    
+    // Update LCD
+    lcd_i2c_clear();
+    lcd_i2c_set_cursor(0, 0);
+    lcd_i2c_print("UNLOCKED!");
+    lcd_i2c_set_cursor(1, 0);
+    lcd_i2c_print("Access Granted");
+    
+    // Change RGB LED to green (success)
+    rgb_led_preset_color(&rgb_led, COLOR_GREEN);
+    
+    printf("*** SEQUENCE COMPLETE - ACCESS GRANTED ***\n");
 
     return 0;
 }
