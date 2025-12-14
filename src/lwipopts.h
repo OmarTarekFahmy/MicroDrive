@@ -1,9 +1,12 @@
 #ifndef __LWIPOPTS_H__
 #define __LWIPOPTS_H__
 
-// Needed for pico_cyw43_arch_lwip_poll (no threading)
+// For pico_cyw43_arch_lwip_threadsafe_background
+// NO_SYS=1 is required, Pico SDK handles threading internally
 #define NO_SYS                      1
-#define MEM_LIBC_MALLOC             1
+
+// MEM_LIBC_MALLOC must be 0 for threadsafe background mode
+#define MEM_LIBC_MALLOC             0
 
 // Enable ICMP for ping detection
 #define LWIP_ICMP                   1

@@ -13,6 +13,8 @@
 #include "lwip/pbuf.h"
 #include "lwip/tcp.h"
 #include "drivers/dc_motor/dc_motor.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 // DC Motor (H-bridge) pins
 #define PIN_IN1 4
@@ -309,6 +311,16 @@ bool check_sequence(void)
     return false;
 }
 
+// FreeRTOS task for WiFi polling (runs in background)
+void wifi_polling_task(void *params) {
+    while (1) {
+        if (connected) {
+            cyw43_arch_poll();
+        }
+        vTaskDelay(pdMS_TO_TICKS(50)); // Poll every 50ms for responsiveness
+    }
+}
+
 int main()
 {
     // Initialize stdio FIRST
@@ -338,7 +350,6 @@ int main()
         return -1;
     }
     printf("[WiFi] Connected!\n");
-
     // Connect to actua
     // Give USB time to enumerate properly (critical for reliable connection)
     sleep_ms(3000);
@@ -357,6 +368,20 @@ int main()
         cyw43_arch_deinit();
         return -1;
     }
+
+    // ========== CREATE FREERTOS TASK FOR WIFI POLLING ==========
+    // Task creation right after TCP connection to keep it alive during all phases
+    // TCP connections need continuous polling to prevent timeout
+    printf("[FreeRTOS] Creating WiFi polling task...\n");
+    xTaskCreate(
+        wifi_polling_task,    // Task function
+        "WiFi_Poll",          // Task name
+        256,                  // Stack size (words)
+        NULL,                 // Parameters
+        1,                    // Priority
+        NULL                  // Task handle
+    );
+    printf("[FreeRTOS] WiFi polling task started (keeps TCP connection alive)\n");
 
 
     // Initialize LCD first (keep it blank initially)
@@ -699,7 +724,7 @@ int main()
         loop_count++;
 
         if (connected) {
-            cyw43_arch_poll();
+            // WiFi polling now handled by FreeRTOS background task
             if (unlock_count > 0) {
                 break;
             }
