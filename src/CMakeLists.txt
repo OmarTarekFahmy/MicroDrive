@@ -3,8 +3,15 @@ cmake_minimum_required(VERSION 3.13)
 # Set board to Pico W
 set(PICO_BOARD pico_w)
 
-# Import Pico SDK (from environment variable)
-include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+# Import Pico SDK (accept CMake variable or environment variable)
+if(NOT DEFINED PICO_SDK_PATH)
+    set(PICO_SDK_PATH $ENV{PICO_SDK_PATH})
+endif()
+include(${PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+
+# Import FreeRTOS kernel (must be before project())
+set(FREERTOS_KERNEL_PATH ${CMAKE_CURRENT_LIST_DIR}/../FreeRTOS-Kernel)
+include(${FREERTOS_KERNEL_PATH}/portable/ThirdParty/GCC/RP2040/FreeRTOS_Kernel_import.cmake)
 
 project(pico_projects C CXX ASM)
 
@@ -41,7 +48,9 @@ target_link_libraries(servo_test
     pico_stdlib
     hardware_pwm
     hardware_i2c
-    pico_cyw43_arch_lwip_poll
+    pico_cyw43_arch_lwip_threadsafe_background
+    FreeRTOS-Kernel
+    FreeRTOS-Kernel-Heap4
 )
 
 # Enable UART stdio for debugging
