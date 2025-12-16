@@ -17,7 +17,7 @@ pico_sdk_init()
 add_executable(servo_test
     main.c
     drivers/servo_test/servo_test.c
-    drivers/MyMPUTest/yassinMpu.c
+    drivers/mpu9250/mpu9250.c
     drivers/lcd/lcd_i2c.c
     drivers/touch/touch_sensor.c
     drivers/buzzer/buzzer.c
@@ -29,7 +29,7 @@ add_executable(servo_test
 target_include_directories(servo_test PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
     ${CMAKE_CURRENT_LIST_DIR}/drivers/servo
-    ${CMAKE_CURRENT_LIST_DIR}/drivers/MyMPUTest
+    ${CMAKE_CURRENT_LIST_DIR}/drivers/mpu9250
     ${CMAKE_CURRENT_LIST_DIR}/drivers/lcd
     ${CMAKE_CURRENT_LIST_DIR}/drivers/touch
     ${CMAKE_CURRENT_LIST_DIR}/drivers/buzzer
@@ -78,6 +78,36 @@ pico_enable_stdio_uart(servo_pulse_test 0)
 
 # Create UF2 and map binaries
 pico_add_extra_outputs(servo_pulse_test)
+
+#--------------------------------------------------------------------
+# MPU9250 9-DOF IMU Test Program
+# Tests gyroscope, accelerometer, magnetometer with servo output
+#--------------------------------------------------------------------
+add_executable(mpu9250_test
+    main_mpu9250_test.c
+    drivers/mpu9250/mpu9250.c
+)
+
+# Include the driver directories
+target_include_directories(mpu9250_test PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/drivers/mpu9250
+)
+
+# Link required Pico libraries (including CYW43 for Pico W LED)
+target_link_libraries(mpu9250_test
+    pico_stdlib
+    hardware_i2c
+    hardware_pwm
+    pico_cyw43_arch_none
+)
+
+# Enable USB stdio for serial output
+pico_enable_stdio_usb(mpu9250_test 1)
+pico_enable_stdio_uart(mpu9250_test 0)
+
+# Create UF2 and map binaries
+pico_add_extra_outputs(mpu9250_test)
 
 #--------------------------------------------------------------------
 # WiFi Camera Project (Pico W only)

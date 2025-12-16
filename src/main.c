@@ -1,6 +1,6 @@
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
-#include "drivers/MyMPUTest/yassinMpu.h" // Yassin's MPU6050 driver with calibration
+#include "drivers/mpu9250/mpu9250.h" // MPU9250 9-DOF IMU with magnetometer
 #include "drivers/lcd/lcd_i2c.h"
 #include "drivers/servo_test/servo_test.h"
 #include "drivers/touch/touch_sensor.h"
@@ -25,19 +25,19 @@
 #define LCD_SCL_PIN 1
 #define LCD_I2C_ADDR 0x27
 
-// Servo GPIO pins - MG996R servos
-#define SERVO_X_PIN 14 // 360° servo for X-axis
-#define SERVO_Y_PIN 15 // 360° servo for Y-axis
-#define SERVO_Z_PIN 18 // 180° servo for Z-axis
+// Servo GPIO pins - MG996R servos (ALL POSITIONAL 180°)
+#define SERVO_X_PIN 14 // 180° positional servo for X-axis (Pitch)
+#define SERVO_Y_PIN 15 // 180° positional servo for Y-axis (Roll)
+#define SERVO_Z_PIN 18 // 180° positional servo for Z-axis (Yaw)
 
 // Servo IDs (matches initialization order)
-#define SERVO_X 0     // Continuous servo on GPIO 14
-#define SERVO_Y 1     // Continuous servo on GPIO 15
-#define SERVO_Z 2     // Positional servo on GPIO 18
-#define SERVO_LOCK 3  // Lock servo on GPIO 20 (continuous)
+#define SERVO_X 0     // Positional servo on GPIO 14 (Pitch)
+#define SERVO_Y 1     // Positional servo on GPIO 15 (Roll)
+#define SERVO_Z 2     // Positional servo on GPIO 18 (Yaw)
+#define SERVO_LOCK 3  // Lock servo on GPIO 20
 
 // Lock servo pin
-#define SERVO_LOCK_PIN 20  // Continuous servo for lock mechanism
+#define SERVO_LOCK_PIN 20  // Lock servo for mechanism
 
 // Touch sensor pins (GPIO 9-12)
 #define TOUCH_1_PIN 9
@@ -80,7 +80,7 @@ static RGB_LED rgb_led;
 // WiFi credentials - SAME AS CAMERA
 #define WIFI_SSID "youssef's Galaxy S21 Ultra 5G"
 #define WIFI_PASSWORD "Ctiger@YM123"
-#define SERVER_IP "10.79.87.200"
+#define SERVER_IP "10.78.236.200"
 #define ACTUATOR_PORT 9999
 
 // Command from server
@@ -479,10 +479,10 @@ int main()
     lcd_i2c_set_cursor(1, 0);
     lcd_i2c_print("MPU6050...");
 
-    // Initialize the MPU6050 sensor
+    // Initialize the MPU9250 sensor
     bool mpu_initialized = false;
     while (!mpu_initialized) {
-        if (mpu6050_init()) {
+        if (mpu9250_init()) {
             mpu_initialized = true;
             break;
         }
@@ -531,7 +531,7 @@ int main()
     sleep_ms(2000);
 
     // Calibrate gyro and accelerometer offsets (1000 samples)
-    mpu6050_calibrate(CALIBRATION_SAMPLES);
+    mpu9250_calibrate_accel_gyro(1000);
 
     // Give a moment after calibration
     sleep_ms(500);
@@ -548,20 +548,15 @@ int main()
 
     printf("Starting MPU6050 test loop...\n\n");
 
-    // Initialize servos for gyro-controlled platform
+    // Initialize servos for IMU-controlled platform
     printf("Initializing servos...\n");
-    servo_test_init(SERVO_X, SERVO_X_PIN);  // X-axis: continuous
-    servo_test_init(SERVO_Y, SERVO_Y_PIN);  // Y-axis: continuous
-    servo_test_init(SERVO_Z, SERVO_Z_PIN);  // Z-axis: positional
-    servo_test_init(SERVO_LOCK, SERVO_LOCK_PIN);  // Lock servo: continuous
+    servo_test_init(SERVO_X, SERVO_X_PIN);  // X-axis: positional (Pitch)
+    servo_test_init(SERVO_Y, SERVO_Y_PIN);  // Y-axis: positional (Roll)
+    servo_test_init(SERVO_Z, SERVO_Z_PIN);  // Z-axis: positional (Yaw)
+    servo_test_init(SERVO_LOCK, SERVO_LOCK_PIN);  // Lock servo
     
-    // Enable continuous mode for X, Y, and Lock servos (360° servos)
-    // Speed: 187.6 dps based on your measurement (3600° in 19.19s)
-    printf("\nEnabling continuous mode for X, Y, and Lock servos...\n");
-    servo_test_set_continuous_mode(SERVO_X, 187.6f);
-    servo_test_set_continuous_mode(SERVO_Y, 187.6f);
-    servo_test_set_continuous_mode(SERVO_LOCK, 187.6f);
-    printf("Servos initialized: X=GPIO%d (cont), Y=GPIO%d (cont), Z=GPIO%d (pos), LOCK=GPIO%d (cont)\n\n",
+    // All servos are now positional 180° servos
+    printf("Servos initialized: X=GPIO%d (Pitch), Y=GPIO%d (Roll), Z=GPIO%d (Yaw), LOCK=GPIO%d\n\n",
            SERVO_X_PIN, SERVO_Y_PIN, SERVO_Z_PIN, SERVO_LOCK_PIN);
     
     last_touched = -1;
@@ -570,9 +565,12 @@ int main()
     float ref_roll = 0.0f;
     float ref_pitch = 0.0f;
     float ref_yaw = 0.0f;
+    
+    // Yaw offset for mapping 0-360° to -90 to +90°
+    float yaw_offset = 0.0f;
 
     // Reset orientation to zero as our reference point
-    mpu6050_reset_orientation();
+    mpu9250_reset_orientation();
 
     // Timing for dt calculation
     uint32_t last_time = to_ms_since_boot(get_absolute_time());
@@ -599,18 +597,25 @@ int main()
             // Touch 1: Re-zero reference to current orientation
             if (touched == 0)
             {
+                // Get current orientation to calculate yaw offset
+                mpu9250_orientation_t current_orient;
+                mpu9250_get_orientation(&current_orient);
+                
+                // Set yaw offset to map current yaw to center (0°)
+                yaw_offset = current_orient.yaw;
+                
                 // Reset orientation angles to zero (new reference point)
-                mpu6050_reset_orientation();
+                mpu9250_reset_orientation();
                 ref_roll = 0.0f;
                 ref_pitch = 0.0f;
                 ref_yaw = 0.0f;
 
-                // Center servos when resetting reference
-                servo_test_reset_continuous_angle(SERVO_X);
-                servo_test_reset_continuous_angle(SERVO_Y);
+                // Center all servos (all are positional now)
+                servo_test_center(SERVO_X);
+                servo_test_center(SERVO_Y);
                 servo_test_center(SERVO_Z);
 
-                printf("[RESET] Orientation reset to zero. Servos centered.\n");
+                printf("[RESET] Orientation reset to zero. Servos centered. Yaw offset: %.2f°\n", yaw_offset);
             }
 
             last_touched = touched;
@@ -629,13 +634,28 @@ int main()
         if (dt > 0.5f) dt = 0.02f;  // Default to 20ms if too large
         if (dt < 0.001f) dt = 0.001f;  // Minimum 1ms
 
-        // Update orientation using complementary filter
-        mpu6050_update(dt);
+        // Update orientation using complementary filter + magnetometer
+        mpu9250_update_orientation(dt);
 
-        // Get current orientation angles
-        float roll = mpu6050_get_roll();
-        float pitch = mpu6050_get_pitch();
-        float yaw = mpu6050_get_yaw();
+        // Get current orientation angles from MPU9250
+        mpu9250_orientation_t orientation;
+        mpu9250_get_orientation(&orientation);
+        
+        float roll = orientation.roll;
+        float pitch = orientation.pitch;
+        float yaw_raw = orientation.yaw;  // MPU9250 gives 0-360°
+        
+        // Map yaw from 0-360° to -90 to +90° range for servo control
+        // Apply offset and wrap to -90..+90 range
+        float yaw = yaw_raw - yaw_offset;
+        
+        // Normalize to -180..+180
+        while (yaw > 180.0f) yaw -= 360.0f;
+        while (yaw < -180.0f) yaw += 360.0f;
+        
+        // Clamp to -90..+90 for servo range
+        if (yaw > 90.0f) yaw = 90.0f;
+        if (yaw < -90.0f) yaw = -90.0f;
 
         // These are already relative to the reset point (no ref subtraction needed)
         float dRoll = roll;
@@ -656,14 +676,14 @@ int main()
         if (servo_yaw < -90.0f) servo_yaw = -90.0f;
 
 
-        // Drive servos with mirrored angles (direct angle control, no accumulation)
-        // Use servo_test_set_angle for all servos - it sets position without tracking
+        // Drive servos with mirrored angles (all positional servos)
+        // Only update if angle change is significant (> 1 degree)
         if(fabs(servo_roll - OLDROLL) > 1){
-            servo_test_move_continuous_angle(SERVO_Y, servo_roll);  // Y servo mirrors roll
+            servo_test_set_angle(SERVO_Y, servo_roll);  // Y servo mirrors roll
             OLDROLL = servo_roll;
         }
         if(fabs(servo_pitch - OLDPITCH) > 1){
-            servo_test_move_continuous_angle(SERVO_X, servo_pitch); // X servo mirrors pitch
+            servo_test_set_angle(SERVO_X, servo_pitch); // X servo mirrors pitch
             OLDPITCH = servo_pitch;
         }
         if(fabs(servo_yaw - OLDYAW) > 1){
@@ -671,15 +691,8 @@ int main()
             OLDYAW = servo_yaw;
         }
 
-        // Drive servos with mirrored angles
-        // For continuous servos (X and Y): use servo_test_move_continuous_angle
-        // For positional servo (Z): use servo_test_set_angle
-        // servo_test_move_continuous_angle(SERVO_X, pitch); // X servo mirrors pitch
-        // servo_test_move_continuous_angle(SERVO_Y, roll);  // Y servo mirrors roll
-        // servo_test_set_angle(SERVO_Z, yaw); // Z servo mirrors yaw (positional)
-
         // Get temperature from sensor
-        float temp_c = mpu6050_get_temperature();
+        float temp_c = mpu9250_get_temperature();
 
         // Display on LCD - show live orientation angles
         // Line 1: Roll and Pitch
