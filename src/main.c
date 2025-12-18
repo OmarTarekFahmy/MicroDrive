@@ -1,5 +1,6 @@
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
+#include "hardware/watchdog.h"
 #include "drivers/mpu9250/mpu9250.h" // MPU9250 9-DOF IMU with magnetometer
 #include "drivers/lcd/lcd_i2c.h"
 #include "drivers/servo_test/servo_test.h"
@@ -38,14 +39,16 @@
 #define SERVO_Z 2     // Positional servo on GPIO 18 (Yaw)
 #define SERVO_LOCK 3  // Lock servo on GPIO 20
 
-// Lock servo pin
-#define SERVO_LOCK_PIN 20  // Lock servo for mechanism
+// Lock servo pin (CONTINUOUS SERVO for door open/close)
+#define SERVO_LOCK_PIN 20  // Continuous servo for door mechanism
 
 // Touch sensor pins (GPIO 9-12)
+// Touch 4 (GPIO 12) is used as RESET after access granted
 #define TOUCH_1_PIN 9
 #define TOUCH_2_PIN 10
 #define TOUCH_3_PIN 11
-#define TOUCH_4_PIN 12
+#define TOUCH_4_PIN 12  // Also used as RESET touch
+#define RESET_TOUCH_ID 3  // Touch 4 = index 3 (0-indexed)
 
 // Buzzer pin (GPIO 13)
 #define BUZZER_PIN 13
@@ -73,6 +76,7 @@ static const int8_t SECRET_SEQUENCE[SEQUENCE_LENGTH] = {0, 2, 1, 3}; // 0-indexe
 static int8_t entered_sequence[SEQUENCE_LENGTH];
 static uint8_t sequence_index = 0;
 static bool system_unlocked = false; // Track if system has been unlocked
+static volatile bool reset_requested = false; // Flag to reset game
 
 // RGB LED instance
 static RGB_LED rgb_led;
@@ -80,9 +84,9 @@ static RGB_LED rgb_led;
 #define UPDATE_INTERVAL_MS 200
 
 // WiFi credentials - SAME AS CAMERA
-#define WIFI_SSID "youssef's Galaxy S21 Ultra 5G"
-#define WIFI_PASSWORD "Ctiger@YM123"
-#define SERVER_IP "10.78.236.200"
+#define WIFI_SSID "Yassin"
+#define WIFI_PASSWORD "YassoSchool1234"
+#define SERVER_IP "172.20.10.6"
 #define ACTUATOR_PORT 9999
 
 // Command from server
@@ -261,6 +265,12 @@ void leds_unlocked(void)
     gpio_put(LED_GREEN_PIN, 1);
 }
 
+// Check if reset touch (Touch 4) is pressed
+bool reset_touch_pressed(void)
+{
+    return touch_get_pressed() == RESET_TOUCH_ID;  // Returns true when Touch 4 pressed
+}
+
 // Flash RGB LED blue rapidly (for final alignment indication)
 void rgb_led_flash_blue(int times, int delay_ms)
 {
@@ -412,6 +422,9 @@ int main()
     rgb_led_preset_color(&rgb_led, COLOR_RED);
     printf("RGB LED: R=GPIO%d, G=GPIO%d, B=GPIO%d (RED=inactive)\n", 
            RGB_RED_PIN, RGB_GREEN_PIN, RGB_BLUE_PIN);
+
+    // Note: Touch 4 will be used as RESET after access is granted
+    printf("Reset: Touch 4 (GPIO %d) - press after access granted to restart\n", TOUCH_4_PIN);
 
     // Initialize sequence tracking
     memset(entered_sequence, -1, sizeof(entered_sequence));
@@ -792,16 +805,19 @@ int main()
     printf("DC Motor: Stopping\n");
     dc_motor_set(&motor, 0.0f);
     
-    // Step 5: Rotate lock servo 135 degrees
-    printf("\n=== ROTATING LOCK SERVO ===\n");
-    printf("Lock Servo: Rotating 135 degrees...\n");
-    servo_test_move_continuous_angle(SERVO_LOCK, 45.0f);
-    printf("Lock Servo: Rotation complete\n");
+    // Step 5: Pull electromagnet (turn ON to engage)
+    printf("\n=== PULLING ELECTROMAGNET ===\n");
+    electromagnet_open();  // GPIO 17 = HIGH = Magnet ON = Pull
+    printf("Electromagnet: ON (pulling)\n");
     
-    // Step 6: Unlock electromagnet (turn OFF to release)
-    printf("\n=== UNLOCKING ELECTROMAGNET ===\n");
-    electromagnet_close();  // GPIO 17 = LOW = Magnet OFF = Lock OPEN
-    printf("Electromagnet: OFF (lock released)\n");
+    // Step 6: Continuous servo anti-clockwise for 2 seconds to open door
+    // Pulse width: 1000µs = full speed anti-clockwise, 1500µs = stop, 2000µs = full speed clockwise
+    printf("\n=== OPENING DOOR (CONTINUOUS SERVO) ===\n");
+    printf("Door Servo: Anti-clockwise for 2 seconds...\n");
+    servo_test_set_pulse_us(SERVO_LOCK, 1000);  // Full speed anti-clockwise
+    sleep_ms(2000);
+    servo_test_set_pulse_us(SERVO_LOCK, 1500);  // Stop
+    printf("Door Servo: Stopped (door open)\n");
     
     // Update LCD
     lcd_i2c_clear();
@@ -814,6 +830,66 @@ int main()
     rgb_led_preset_color(&rgb_led, COLOR_GREEN);
     
     printf("*** SEQUENCE COMPLETE - ACCESS GRANTED ***\n");
+    
+    // ========== WAIT FOR RESET (Touch 4) ==========
+    printf("\n=== Touch TOUCH 4 (GPIO %d) to restart game ===\n", TOUCH_4_PIN);
+    
+    while (1) {
+        if (reset_touch_pressed()) {
+            printf("\n*** RESET TOUCH PRESSED - RESTARTING GAME ***\n");
+            
+            // Play reset tone
+            buzzer_beep(500, 200);
+            
+            // Debounce - wait for release
+            sleep_ms(200);
+            while (reset_touch_pressed()) {
+                sleep_ms(50);
+            }
+            
+            // Close door (continuous servo clockwise for 2 seconds)
+            printf("Closing door...\n");
+            servo_test_set_pulse_us(SERVO_LOCK, 2000);  // Full speed clockwise
+            sleep_ms(2000);
+            servo_test_set_pulse_us(SERVO_LOCK, 1500);  // Stop
+            
+            // Release electromagnet
+            printf("Releasing electromagnet...\n");
+            electromagnet_close();
+            
+            // Center all servos
+            printf("Centering servos...\n");
+            servo_test_center(SERVO_X);
+            servo_test_center(SERVO_Y);
+            servo_test_center(SERVO_Z);
+            
+            // Reset RGB to RED
+            rgb_led_preset_color(&rgb_led, COLOR_RED);
+            
+            // Clear LCD
+            lcd_i2c_clear();
+            
+            // Reset LEDs to locked state
+            leds_locked();
+            
+            // Reset sequence tracking
+            sequence_index = 0;
+            memset(entered_sequence, -1, sizeof(entered_sequence));
+            system_unlocked = false;
+            unlock_count = 0;
+            
+            // Re-initialize MPU9250
+            printf("Re-initializing MPU9250...\n");
+            mpu9250_reset_orientation();
+            
+            printf("\n*** GAME RESET - Waiting for sequence ***\n");
+            printf("Secret sequence: Touch 1-3-2-4\n\n");
+            
+            // Software reset - use watchdog to perform a clean reset
+            watchdog_reboot(0, 0, 0);
+        }
+        sleep_ms(100);
+    }
 
     return 0;
 }
